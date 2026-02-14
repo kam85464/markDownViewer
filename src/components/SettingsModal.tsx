@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { X, Settings, Check, Keyboard, Map, Link2, AlignVerticalJustifyCenter, Palette, Save, RotateCcw, HelpCircle, FileJson, Type, Download, Eye, Package, CheckCircle, Circle } from 'lucide-react';
 
@@ -10,44 +10,32 @@ const availableStyles = Object.entries(stylePresets).map(([path, content]) => ({
 }));
 
 const PreviewFrame = ({ css }: { css: string }) => {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-
-  useEffect(() => {
-    if (iframeRef.current) {
-      const doc = iframeRef.current.contentDocument;
-      if (doc) {
-        const html = `<!DOCTYPE html>
-            <html>
-              <head>
-                <style>
-                  ${css}
-                  /* Ensure preview fits in iframe */
-                  body { margin: 0; padding: 1rem; height: 100%; overflow: hidden; }
-                </style>
-              </head>
-              <body class="markdown-body">
-                <h1>Heading 1</h1>
-                <h2>Heading 2</h2>
-                <p>This is a <strong>preview</strong> of the selected style.</p>
-                <ul>
-                  <li>List item 1</li>
-                  <li>List item 2</li>
-                </ul>
-                <code>console.log("Hello World");</code>
-                <p><a href="#">Link example</a></p>
-              </body>
-            </html>`;
-        doc.open();
-        doc.write(html);
-        doc.close();
-      }
-    }
-  }, [css]);
+  const srcdoc = `<!DOCTYPE html>
+    <html>
+      <head>
+        <style>
+          ${css}
+          /* Ensure preview fits in iframe */
+          body { margin: 0; padding: 1rem; height: 100%; overflow: hidden; }
+        </style>
+      </head>
+      <body class="markdown-body">
+        <h1>Heading 1</h1>
+        <h2>Heading 2</h2>
+        <p>This is a <strong>preview</strong> of the selected style.</p>
+        <ul>
+          <li>List item 1</li>
+          <li>List item 2</li>
+        </ul>
+        <code>console.log("Hello World");</code>
+        <p><a href="#">Link example</a></p>
+      </body>
+    </html>`;
 
   return (
     <iframe
-      ref={iframeRef}
       title="Style Preview"
+      srcDoc={srcdoc}
       className="w-full h-40 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-black"
     />
   );
