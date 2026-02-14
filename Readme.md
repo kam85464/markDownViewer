@@ -49,6 +49,9 @@ A powerful, cross-platform Markdown viewer and editor built with React, Electron
 
 - [ ] **Git Integration:** Basic git status and commit features.
 - [ ] **Cloud Sync:** Sync with Google Drive / Dropbox.
+- [x] **Export Options:** Support for PNG/JPEG export of rendered content.
+- [x] **Custom CSS:** Allow users to provide their own stylesheet for the preview.
+- [ ] **Auto-Save:** Configurable auto-save interval.
 
 ## Development
 
@@ -59,3 +62,7 @@ A powerful, cross-platform Markdown viewer and editor built with React, Electron
 ### Run
 
 `npm run dev`
+
+### Build
+
+`npm run build`

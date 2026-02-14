@@ -13,6 +13,7 @@
     "electron-store": "^8.2.0",
     "highlight.js": "^11.9.0",
     "jotai": "^2.6.4",
+    "html-to-image": "^1.11.11",
     "katex": "^0.16.9",
     "lucide-react": "^0.330.0",
     "markdown-it": "^14.0.0",

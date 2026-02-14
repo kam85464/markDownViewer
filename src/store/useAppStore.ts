@@ -20,6 +20,7 @@ interface AppState {
   isPresentationMode: boolean;
   isDistractionFreeMode: boolean;
   isTypewriterMode: boolean;
+  autoSaveEnabled: boolean;
   isVimMode: boolean;
   theme: string;
   showPlugins: boolean;
@@ -30,6 +31,7 @@ interface AppState {
   isSyncScroll: boolean;
   wordWrap: boolean;
   showSettings: boolean;
+  customCSS: string;
   
   setFolder: (folder: string) => void;
   setFiles: (files: FileItem[]) => void;
@@ -51,6 +53,7 @@ interface AppState {
   togglePresentationMode: () => void;
   toggleDistractionFreeMode: () => void;
   toggleTypewriterMode: () => void;
+  toggleAutoSave: () => void;
   toggleVimMode: () => void;
   togglePluginsModal: () => void;
   enablePlugin: (id: string) => void;
@@ -63,6 +66,7 @@ interface AppState {
   toggleWordWrap: () => void;
   toggleSettings: () => void;
   formatCurrentFile: () => Promise<void>;
+  setCustomCSS: (css: string) => void;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -81,6 +85,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   isPresentationMode: false,
   isDistractionFreeMode: false,
   isTypewriterMode: false,
+  autoSaveEnabled: localStorage.getItem('autoSaveEnabled') === 'true',
   isVimMode: false,
   theme: 'vs-dark',
   showPlugins: false,
@@ -97,6 +102,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   isSyncScroll: true,
   wordWrap: true,
   showSettings: false,
+  customCSS: localStorage.getItem('customCSS') || '',
 
   setFolder: (folder) => set({ currentFolder: folder }),
   setFiles: (files) => set({ files }),
@@ -297,6 +303,12 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   toggleTypewriterMode: () => set((state) => ({ isTypewriterMode: !state.isTypewriterMode })),
 
+  toggleAutoSave: () => set((state) => {
+    const newValue = !state.autoSaveEnabled;
+    localStorage.setItem('autoSaveEnabled', String(newValue));
+    return { autoSaveEnabled: newValue };
+  }),
+
   toggleVimMode: () => set((state) => ({ isVimMode: !state.isVimMode })),
 
   togglePluginsModal: () => set((state) => ({ showPlugins: !state.showPlugins })),
@@ -333,5 +345,10 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (!markdownContent) return;
     const formatted = await formatMarkdown(markdownContent);
     set({ markdownContent: formatted });
-  }
+  },
+
+  setCustomCSS: (css) => {
+    localStorage.setItem('customCSS', css);
+    set({ customCSS: css });
+  },
 }));

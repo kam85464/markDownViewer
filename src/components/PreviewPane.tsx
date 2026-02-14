@@ -3,11 +3,13 @@ import { useAppStore } from '../store/useAppStore';
 import { createMarkdownParser } from '../services/markdownService';
 import mermaid from 'mermaid';
 import plantumlEncoder from 'plantuml-encoder';
+import { toPng, toJpeg } from 'html-to-image';
+import { Download, Image as ImageIcon } from 'lucide-react';
 import 'katex/dist/katex.min.css';
 import 'highlight.js/styles/github-dark.css';
 
 export const PreviewPane: React.FC = () => {
-  const { markdownContent, plugins, isSyncScroll } = useAppStore();
+  const { markdownContent, plugins, isSyncScroll, customCSS } = useAppStore();
   const scrollRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
@@ -85,18 +87,56 @@ export const PreviewPane: React.FC = () => {
     window.dispatchEvent(new CustomEvent('preview-scroll', { detail: percentage }));
   };
 
+  const handleExport = async (type: 'png' | 'jpeg') => {
+    if (!contentRef.current) return;
+    try {
+      const isDark = document.documentElement.classList.contains('dark');
+      const backgroundColor = isDark ? '#111827' : '#ffffff';
+      
+      const options = { backgroundColor, quality: 0.95 };
+      const dataUrl = type === 'png' 
+        ? await toPng(contentRef.current, options) 
+        : await toJpeg(contentRef.current, options);
+        
+      const link = document.createElement('a');
+      link.download = `export-${Date.now()}.${type}`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error('Export failed', err);
+      setError("Failed to export image.");
+    }
+  };
+
   if (error) {
     return <div className="h-full w-full p-8 text-red-500 bg-white dark:bg-gray-900">{error}</div>;
   }
 
   return (
-    <div ref={scrollRef} onScroll={handleScroll} className="h-full w-full overflow-y-auto bg-white dark:bg-gray-900 p-8">
-      <div 
-        ref={contentRef}
-        className="prose dark:prose-invert max-w-none 
-                   prose-pre:bg-gray-100 dark:prose-pre:bg-gray-800
-                   prose-img:rounded-lg prose-headings:border-b prose-headings:border-gray-200 dark:prose-headings:border-gray-700 prose-headings:pb-2"
-      />
+    <div className="relative h-full w-full bg-white dark:bg-gray-900">
+      {customCSS && <style>{customCSS}</style>}
+      <div className="absolute top-4 right-8 z-10 flex gap-2 opacity-0 hover:opacity-100 transition-opacity duration-200">
+        <button 
+          onClick={() => handleExport('png')}
+          className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded shadow-sm hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-700"
+        >
+          <ImageIcon className="w-3 h-3" /> PNG
+        </button>
+        <button 
+          onClick={() => handleExport('jpeg')}
+          className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded shadow-sm hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-700"
+        >
+          <Download className="w-3 h-3" /> JPG
+        </button>
+      </div>
+      <div ref={scrollRef} onScroll={handleScroll} className="h-full w-full overflow-y-auto p-8">
+        <div 
+          ref={contentRef}
+          className="prose dark:prose-invert max-w-none 
+                     prose-pre:bg-gray-100 dark:prose-pre:bg-gray-800
+                     prose-img:rounded-lg prose-headings:border-b prose-headings:border-gray-200 dark:prose-headings:border-gray-700 prose-headings:pb-2"
+        />
+      </div>
     </div>
   );
 };

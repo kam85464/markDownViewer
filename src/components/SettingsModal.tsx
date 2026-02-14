@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { X, Settings, Check, Keyboard, Map, Link2, AlignVerticalJustifyCenter, Palette } from 'lucide-react';
+import { X, Settings, Check, Keyboard, Map, Link2, AlignVerticalJustifyCenter, Palette, Save } from 'lucide-react';
 
 export const SettingsModal: React.FC = () => {
   const { 
@@ -16,7 +16,11 @@ export const SettingsModal: React.FC = () => {
     toggleSyncScroll,
     isTypewriterMode,
     toggleTypewriterMode,
-    plugins
+    autoSaveEnabled,
+    toggleAutoSave,
+    plugins,
+    customCSS,
+    setCustomCSS
   } = useAppStore();
 
   if (!showSettings) return null;
@@ -86,12 +90,23 @@ export const SettingsModal: React.FC = () => {
             </div>
             <ToggleItem label="Minimap" icon={Map} value={showMinimap} onChange={toggleMinimap} />
             <ToggleItem label="Typewriter Mode" icon={AlignVerticalJustifyCenter} value={isTypewriterMode} onChange={toggleTypewriterMode} description="Keeps the cursor centered vertically" />
+            <ToggleItem label="Auto-Save" icon={Save} value={autoSaveEnabled} onChange={toggleAutoSave} description="Automatically save changes after 2 seconds of inactivity" />
           </div>
 
           <div>
             <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Editor Behavior</h3>
             <ToggleItem label="Vim Mode" icon={Keyboard} value={isVimMode} onChange={toggleVimMode} description="Enable Vim keybindings" />
             <ToggleItem label="Sync Scroll" icon={Link2} value={isSyncScroll} onChange={toggleSyncScroll} description="Synchronize editor and preview scrolling" />
+          </div>
+
+          <div className="mt-6">
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Custom CSS</h3>
+            <textarea
+              className="w-full h-32 p-3 text-xs font-mono bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 dark:text-gray-300 resize-none"
+              placeholder="/* Add custom CSS for the preview pane here */"
+              value={customCSS}
+              onChange={(e) => setCustomCSS(e.target.value)}
+            />
           </div>
         </div>
       </div>
