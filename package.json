@@ -2,6 +2,8 @@
   "name": "markdown-viewer-pro",
   "version": "1.0.0",
   "main": "dist-electron/main.js",
+  "description": "A powerful Markdown viewer built with Electron and React.",
+  "author": "Kamalsoft",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build && electron-builder",

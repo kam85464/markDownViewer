@@ -26,7 +26,8 @@ export default defineConfig({
       '@': path.resolve(__dirname, 'src'),
     },
   },
+  
   optimizeDeps: {
-    include: ['reveal.js', 'monaco-vim', 'monaco-editor', 'prettier', 'prettier/plugins/markdown', 'prettier/plugins/estree'],
+    include: ['reveal.js', 'monaco-vim', 'monaco-editor', 'prettier'],
   },
 })

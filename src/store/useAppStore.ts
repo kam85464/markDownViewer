@@ -3,6 +3,7 @@ import { FileItem } from '../types/global';
 import { Plugin } from '../types/plugin';
 import { fileService } from '../services/fileService';
 import { formatMarkdown } from '../services/markdownService';
+import { settingsService } from '../services/settingsService';
 
 interface AppState {
   currentFolder: string | null;
@@ -32,6 +33,7 @@ interface AppState {
   wordWrap: boolean;
   showSettings: boolean;
   customCSS: string;
+  fontSize: number;
   
   setFolder: (folder: string) => void;
   setFiles: (files: FileItem[]) => void;
@@ -67,6 +69,8 @@ interface AppState {
   toggleSettings: () => void;
   formatCurrentFile: () => Promise<void>;
   setCustomCSS: (css: string) => void;
+  setFontSize: (size: number) => void;
+  openSettingsFile: () => Promise<void>;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -85,7 +89,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   isPresentationMode: false,
   isDistractionFreeMode: false,
   isTypewriterMode: false,
-  autoSaveEnabled: localStorage.getItem('autoSaveEnabled') === 'true',
+  autoSaveEnabled: settingsService.get('autoSaveEnabled'),
   isVimMode: false,
   theme: 'vs-dark',
   showPlugins: false,
@@ -102,7 +106,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   isSyncScroll: true,
   wordWrap: true,
   showSettings: false,
-  customCSS: localStorage.getItem('customCSS') || '',
+  customCSS: settingsService.get('customCSS'),
+  fontSize: settingsService.get('fontSize'),
 
   setFolder: (folder) => set({ currentFolder: folder }),
   setFiles: (files) => set({ files }),
@@ -166,7 +171,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   saveAs: async () => {
     const { markdownContent, currentFolder } = get();
-    const newPath = await fileService.saveFileAs(markdownContent);
+    const newPath = await (fileService.saveFileAs ? fileService.saveFileAs(markdownContent) : Promise.resolve(null));
     if (newPath) {
       // If we have a folder open, rescan to see if the new file is in it
       if (currentFolder) {
@@ -305,7 +310,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   toggleAutoSave: () => set((state) => {
     const newValue = !state.autoSaveEnabled;
-    localStorage.setItem('autoSaveEnabled', String(newValue));
+    settingsService.set('autoSaveEnabled', newValue);
     return { autoSaveEnabled: newValue };
   }),
 
@@ -348,7 +353,16 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   setCustomCSS: (css) => {
-    localStorage.setItem('customCSS', css);
+    settingsService.set('customCSS', css);
     set({ customCSS: css });
+  },
+
+  setFontSize: (size) => {
+    settingsService.set('fontSize', size);
+    set({ fontSize: size });
+  },
+
+  openSettingsFile: async () => {
+    await settingsService.openInEditor();
   },
 }));

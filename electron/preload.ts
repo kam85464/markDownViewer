@@ -10,4 +10,8 @@ contextBridge.exposeInMainWorld('electron', {
   showConfirmDialog: (options: any) => ipcRenderer.invoke('show-confirm-dialog', options),
   exportToPdf: (htmlContent: string) => ipcRenderer.invoke('export-pdf', htmlContent),
   exportToHtml: (htmlContent: string) => ipcRenderer.invoke('export-html', htmlContent),
+  getSettings: () => ipcRenderer.invoke('get-settings'),
+  setSetting: (key: string, value: any) => ipcRenderer.invoke('set-setting', key, value),
+  resetSettings: () => ipcRenderer.invoke('reset-settings'),
+  openSettingsInEditor: () => ipcRenderer.invoke('open-settings-editor'),
 })

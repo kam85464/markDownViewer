@@ -15,7 +15,7 @@ export const TableOfContents: React.FC = () => {
     const parser = createMarkdownParser([]); 
     const tokens = parser.parse(markdownContent, {});
     
-    const tempHeaders = [];
+    const tempHeaders: { level: number; text: string; slug: string }[] = [];
     for (let i = 0; i < tokens.length; i++) {
       if (tokens[i].type === 'heading_open') {
         const level = parseInt(tokens[i].tag.slice(1), 10);
