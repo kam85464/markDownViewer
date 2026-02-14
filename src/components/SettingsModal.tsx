@@ -3,7 +3,7 @@ import { useAppStore } from '../store/useAppStore';
 import { X, Settings, Check, Keyboard, Map, Link2, AlignVerticalJustifyCenter, Palette, Save, RotateCcw, HelpCircle, FileJson, Type, Download, Eye } from 'lucide-react';
 
 // Load style presets from src/styles directory
-const stylePresets = import.meta.glob('@/styles/*.css', { query: '?raw', import: 'default', eager: true });
+const stylePresets = import.meta.glob('@/styles/*.css', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
 const availableStyles = Object.entries(stylePresets).map(([path, content]) => ({
   name: path.split('/').pop() || 'Unknown',
   content: content as string

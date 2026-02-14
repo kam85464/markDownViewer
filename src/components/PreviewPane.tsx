@@ -35,12 +35,12 @@ export const PreviewPane: React.FC = () => {
         setError(null);
         // 1. Render Markdown
         contentRef.current.innerHTML = md.render(markdownContent || '');
-
+        
         // 2. Render Mermaid Diagrams (only if the plugin is enabled and nodes exist)
         const mermaidNodes = contentRef.current.querySelectorAll('.mermaid');
         if (mermaidNodes.length > 0) {
           mermaid.run({
-            nodes: mermaidNodes as any,
+            nodes: Array.from(mermaidNodes) as any,
           }).catch(err => console.error('Mermaid error:', err));
         }
 

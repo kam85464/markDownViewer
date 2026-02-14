@@ -1,9 +1,11 @@
 import MarkdownIt from 'markdown-it';
+// @ts-ignore
 import mk from 'markdown-it-katex';
 import hljs from 'markdown-it-highlightjs';
-import taskLists from 'markdown-it-task-lists';
 import { Plugin } from '../types/plugin';
 import { format } from 'prettier/standalone';
+// @ts-ignore
+import taskLists from 'markdown-it-task-lists';
 import * as prettierPluginMarkdown from 'prettier/plugins/markdown';
 import * as prettierPluginEstree from 'prettier/plugins/estree';
 
