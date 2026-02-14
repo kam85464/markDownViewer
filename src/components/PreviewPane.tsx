@@ -10,6 +10,7 @@ export const PreviewPane: React.FC = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
+  const isScrollingFromEditor = useRef(false);
 
   // Re-create the markdown parser whenever the plugins list changes
   const md = useMemo(() => createMarkdownParser(plugins), [plugins]);
@@ -49,21 +50,33 @@ export const PreviewPane: React.FC = () => {
   useEffect(() => {
     const handleScrollSync = (e: Event) => {
       if (!isSyncScroll || !scrollRef.current) return;
+      isScrollingFromEditor.current = true;
       const customEvent = e as CustomEvent;
       const percentage = customEvent.detail;
       scrollRef.current.scrollTop = percentage * (scrollRef.current.scrollHeight - scrollRef.current.clientHeight);
+      setTimeout(() => { isScrollingFromEditor.current = false; }, 50);
     };
 
     window.addEventListener('editor-scroll', handleScrollSync);
     return () => window.removeEventListener('editor-scroll', handleScrollSync);
   }, [isSyncScroll]);
 
+  const handleScroll = () => {
+    if (!isSyncScroll || !scrollRef.current || isScrollingFromEditor.current) return;
+    
+    const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+    const maxScroll = scrollHeight - clientHeight;
+    const percentage = maxScroll > 0 ? scrollTop / maxScroll : 0;
+    
+    window.dispatchEvent(new CustomEvent('preview-scroll', { detail: percentage }));
+  };
+
   if (error) {
     return <div className="h-full w-full p-8 text-red-500 bg-white dark:bg-gray-900">{error}</div>;
   }
 
   return (
-    <div ref={scrollRef} className="h-full w-full overflow-y-auto bg-white dark:bg-gray-900 p-8">
+    <div ref={scrollRef} onScroll={handleScroll} className="h-full w-full overflow-y-auto bg-white dark:bg-gray-900 p-8">
       <div 
         ref={contentRef}
         className="prose dark:prose-invert max-w-none 

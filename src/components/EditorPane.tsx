@@ -10,6 +10,7 @@ export const EditorPane: React.FC = () => {
   const vimModeRef = useRef<any>(null);
   const isTypewriterModeRef = useRef(isTypewriterMode);
   const isSyncScrollRef = useRef(isSyncScroll);
+  const isScrollingFromPreview = useRef(false);
 
   const handleEditorDidMount: OnMount = (editor) => {
     editorRef.current = editor;
@@ -20,7 +21,7 @@ export const EditorPane: React.FC = () => {
       }
     });
     editor.onDidScrollChange((e) => {
-      if (isSyncScrollRef.current) {
+      if (isSyncScrollRef.current && !isScrollingFromPreview.current) {
         const layoutInfo = editor.getLayoutInfo();
         const maxScroll = e.scrollHeight - layoutInfo.height;
         const percentage = maxScroll > 0 ? e.scrollTop / maxScroll : 0;
@@ -82,6 +83,26 @@ export const EditorPane: React.FC = () => {
 
   useEffect(() => {
     isSyncScrollRef.current = isSyncScroll;
+  }, [isSyncScroll]);
+
+  useEffect(() => {
+    const handlePreviewScroll = (e: Event) => {
+      if (!isSyncScroll || !editorRef.current) return;
+      
+      isScrollingFromPreview.current = true;
+      const customEvent = e as CustomEvent;
+      const percentage = customEvent.detail;
+      
+      const scrollHeight = editorRef.current.getScrollHeight();
+      const layoutInfo = editorRef.current.getLayoutInfo();
+      const maxScroll = scrollHeight - layoutInfo.height;
+      
+      editorRef.current.setScrollTop(percentage * maxScroll);
+      setTimeout(() => { isScrollingFromPreview.current = false; }, 50);
+    };
+
+    window.addEventListener('preview-scroll', handlePreviewScroll);
+    return () => window.removeEventListener('preview-scroll', handlePreviewScroll);
   }, [isSyncScroll]);
 
   return (
