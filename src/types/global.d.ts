@@ -14,6 +14,10 @@ export interface IElectronAPI {
   showConfirmDialog: (options: any) => Promise<number>;
   exportToPdf: (htmlContent: string) => Promise<boolean>;
   exportToHtml: (htmlContent: string) => Promise<boolean>;
+  getSettings: () => Promise<any>;
+  setSetting: (key: string, value: any) => Promise<boolean>;
+  resetSettings: () => Promise<boolean>;
+  openSettingsInEditor: () => Promise<boolean>;
 }
 
 declare global {

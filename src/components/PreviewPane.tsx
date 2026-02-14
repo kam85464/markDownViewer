@@ -40,7 +40,7 @@ export const PreviewPane: React.FC = () => {
         const mermaidNodes = contentRef.current.querySelectorAll('.mermaid');
         if (mermaidNodes.length > 0) {
           mermaid.run({
-            nodes: mermaidNodes,
+            nodes: mermaidNodes as any,
           }).catch(err => console.error('Mermaid error:', err));
         }
 

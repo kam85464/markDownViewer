@@ -14,6 +14,7 @@ export interface IFileService {
   saveFile(path: string, content: string): Promise<void>;
   getRecentFolders(): Promise<string[]>;
   showConfirmDialog(options: { type: string; buttons: string[]; title: string; message: string; detail?: string }): Promise<number>;
+  saveFileAs(content: string): Promise<string | null>;
   exportToPdf(html: string): Promise<void>;
   exportToHtml(html: string): Promise<void>;
 }
@@ -29,35 +30,39 @@ class ElectronFileService implements IFileService {
   }
 
   async selectFolder(): Promise<string | null> {
-    return await this.ipcRenderer.invoke('dialog:openFolder');
+    return await this.ipcRenderer.invoke('select-folder');
   }
 
   async scanFolder(path: string): Promise<FileItem[]> {
-    return await this.ipcRenderer.invoke('fs:scanFolder', path);
+    return await this.ipcRenderer.invoke('scan-folder', path);
   }
 
   async readFile(path: string): Promise<string> {
-    return await this.ipcRenderer.invoke('fs:readFile', path);
+    return await this.ipcRenderer.invoke('read-file', path);
   }
 
   async saveFile(path: string, content: string): Promise<void> {
-    return await this.ipcRenderer.invoke('fs:saveFile', path, content);
+    return await this.ipcRenderer.invoke('save-file', { filePath: path, content });
   }
 
   async getRecentFolders(): Promise<string[]> {
-    return await this.ipcRenderer.invoke('fs:getRecentFolders');
+    return await this.ipcRenderer.invoke('get-recent-folders');
   }
 
   async showConfirmDialog(options: any): Promise<number> {
-    return await this.ipcRenderer.invoke('dialog:showMessageBox', options);
+    return await this.ipcRenderer.invoke('show-confirm-dialog', options);
+  }
+
+  async saveFileAs(content: string): Promise<string | null> {
+    return await this.ipcRenderer.invoke('save-file-as', content);
   }
 
   async exportToPdf(html: string): Promise<void> {
-    return await this.ipcRenderer.invoke('export:pdf', html);
+    return await this.ipcRenderer.invoke('export-pdf', html);
   }
 
   async exportToHtml(html: string): Promise<void> {
-    return await this.ipcRenderer.invoke('export:html', html);
+    return await this.ipcRenderer.invoke('export-html', html);
   }
 }
 
@@ -188,6 +193,10 @@ class BrowserFileService implements IFileService {
     }
   }
 
+  async saveFileAs(content: string): Promise<string | null> {
+    return null;
+  }
+  
   async saveFile(path: string, content: string): Promise<void> {
     if (this.directoryHandle) {
       const handle = this.fileHandles.get(path);

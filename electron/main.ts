@@ -28,7 +28,7 @@ function createWindow() {
   if (process.env.VITE_DEV_SERVER_URL) {
     win.loadURL(process.env.VITE_DEV_SERVER_URL)
   } else {
-    win.loadFile(path.join(process.env.DIST, 'index.html'))
+    win.loadFile(path.join(process.env.DIST || '', 'index.html'))
   }
 
   win.on('close', () => {
@@ -209,5 +209,35 @@ ipcMain.handle('export-html', async (_, htmlContent: string) => {
   `;
 
   fs.writeFileSync(filePath, fullHtml, 'utf-8');
+  return true;
+});
+
+// Settings Management - IPC Handlers
+ipcMain.handle('get-settings', async () => {
+  return {
+    customCSS: store.get('customCSS') as string || '',
+    autoSaveEnabled: store.get('autoSaveEnabled') as boolean || false,
+    theme: store.get('theme') as string || 'vs-dark',
+    isVimMode: store.get('isVimMode') as boolean || false,
+    showMinimap: store.get('showMinimap') as boolean || false,
+    isSyncScroll: store.get('isSyncScroll') as boolean || true,
+    isTypewriterMode: store.get('isTypewriterMode') as boolean || false,
+    wordWrap: store.get('wordWrap') as boolean || true,
+    fontSize: store.get('fontSize') as number || 14,
+  };
+});
+
+ipcMain.handle('set-setting', async (_, key: string, value: any) => {
+  store.set(key, value);
+  return true;
+});
+
+ipcMain.handle('reset-settings', async () => {
+  store.clear();
+  return true;
+});
+
+ipcMain.handle('open-settings-editor', async () => {
+  store.openInEditor();
   return true;
 });
