@@ -5,7 +5,7 @@ import { dracula, nord } from '../utils/themes';
 import { initVimMode } from 'monaco-vim';
 
 export const EditorPane: React.FC = () => {
-  const { markdownContent, setMarkdownContent, theme, setCursorPosition, findTrigger, isVimMode, isZenMode, isDistractionFreeMode, isTypewriterMode, isSyncScroll, showMinimap, wordWrap } = useAppStore();
+  const { markdownContent, setMarkdownContent, theme, setCursorPosition, findTrigger, isVimMode, isZenMode, isDistractionFreeMode, isTypewriterMode, isSyncScroll, showMinimap, wordWrap, customCSS } = useAppStore();
   const editorRef = useRef<any>(null);
   const vimModeRef = useRef<any>(null);
   const isTypewriterModeRef = useRef(isTypewriterMode);
@@ -107,6 +107,7 @@ export const EditorPane: React.FC = () => {
 
   return (
     <div className="h-full w-full overflow-hidden">
+      {customCSS && <style>{customCSS}</style>}
       <MonacoEditor
         height="100%"
         language="markdown"

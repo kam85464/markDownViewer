@@ -1,6 +1,58 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { X, Settings, Check, Keyboard, Map, Link2, AlignVerticalJustifyCenter, Palette, Save } from 'lucide-react';
+import { X, Settings, Check, Keyboard, Map, Link2, AlignVerticalJustifyCenter, Palette, Save, RotateCcw, HelpCircle, FileJson, Type, Download, Eye } from 'lucide-react';
+
+// Load style presets from src/styles directory
+const stylePresets = import.meta.glob('@/styles/*.css', { query: '?raw', import: 'default', eager: true });
+const availableStyles = Object.entries(stylePresets).map(([path, content]) => ({
+  name: path.split('/').pop() || 'Unknown',
+  content: content as string
+}));
+
+const PreviewFrame = ({ css }: { css: string }) => {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  useEffect(() => {
+    if (iframeRef.current) {
+      const doc = iframeRef.current.contentDocument;
+      if (doc) {
+        doc.open();
+        doc.write(`
+            <!DOCTYPE html>
+            <html>
+              <head>
+                <style>
+                  ${css}
+                  /* Ensure preview fits in iframe */
+                  body { margin: 0; padding: 1rem; height: 100%; overflow: hidden; }
+                </style>
+              </head>
+              <body class="markdown-body">
+                <h1>Heading 1</h1>
+                <h2>Heading 2</h2>
+                <p>This is a <strong>preview</strong> of the selected style.</p>
+                <ul>
+                  <li>List item 1</li>
+                  <li>List item 2</li>
+                </ul>
+                <code>console.log("Hello World");</code>
+                <p><a href="#">Link example</a></p>
+              </body>
+            </html>
+          `);
+        doc.close();
+      }
+    }
+  }, [css]);
+
+  return (
+    <iframe
+      ref={iframeRef}
+      title="Style Preview"
+      className="w-full h-40 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-black"
+    />
+  );
+};
 
 export const SettingsModal: React.FC = () => {
   const { 
@@ -22,6 +74,8 @@ export const SettingsModal: React.FC = () => {
     customCSS,
     setCustomCSS
   } = useAppStore();
+
+  const [previewStyle, setPreviewStyle] = useState<{ name: string, content: string } | null>(null);
 
   if (!showSettings) return null;
 
@@ -56,6 +110,18 @@ export const SettingsModal: React.FC = () => {
       </button>
     </div>
   );
+
+  const handleSavePreset = () => {
+    const blob = new Blob([customCSS], { type: 'text/css' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `custom-style-${Date.now()}.css`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -100,13 +166,69 @@ export const SettingsModal: React.FC = () => {
           </div>
 
           <div className="mt-6">
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Custom CSS</h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Custom CSS</h3>
+              {availableStyles.length > 0 && (
+                <select
+                  className="text-xs bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 dark:text-gray-300"
+                  onChange={(e) => {
+                    const style = availableStyles.find(s => s.name === e.target.value);
+                    if (style) setPreviewStyle(style);
+                    e.target.value = "";
+                  }}
+                  defaultValue=""
+                >
+                  <option value="" disabled>Preview Preset...</option>
+                  {availableStyles.map(s => (
+                    <option key={s.name} value={s.name}>{s.name}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            {previewStyle && (
+              <div className="mb-4 p-3 bg-gray-100 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs font-bold text-gray-600 dark:text-gray-300 flex items-center">
+                    <Eye size={12} className="mr-1" /> Preview: {previewStyle.name}
+                  </span>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => setPreviewStyle(null)}
+                      className="text-xs px-2 py-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setCustomCSS(previewStyle.content);
+                        setPreviewStyle(null);
+                      }}
+                      className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                </div>
+                <PreviewFrame css={previewStyle.content} />
+              </div>
+            )}
+
             <textarea
               className="w-full h-32 p-3 text-xs font-mono bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 dark:text-gray-300 resize-none"
               placeholder="/* Add custom CSS for the preview pane here */"
               value={customCSS}
               onChange={(e) => setCustomCSS(e.target.value)}
             />
+            <div className="mt-2 flex justify-end">
+              <button
+                onClick={handleSavePreset}
+                className="flex items-center text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                title="Save current CSS as a file"
+              >
+                <Download size={12} className="mr-1" /> Save as Preset
+              </button>
+            </div>
           </div>
         </div>
       </div>

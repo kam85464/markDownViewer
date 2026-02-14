@@ -1,0 +1,36 @@
+:root {
+  --bg: #fafafa;
+  --fg: #1a1a1a;
+  --card: #ffffff;
+  --border: #e5e5e5;
+  --accent: #007aff;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, -apple-system, sans-serif;
+  line-height: 1.6;
+}
+
+.markdown-body {
+  background: var(--card);
+  padding: 2rem;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+}
+
+h1, h2, h3 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+code {
+  background: #f1f1f1;
+  padding: 3px 6px;
+  border-radius: 6px;
+}
+a {
+  color: var(--accent);
+  text-decoration: none;
+}

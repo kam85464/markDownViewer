@@ -1,0 +1,22 @@
+:root {
+  --bg: linear-gradient(135deg, #dfe9f3, #ffffff);
+  --fg: #1a1a1a;
+  --card: rgba(255,255,255,0.75);
+  --accent: #6a5acd;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+}
+
+.markdown-body {
+  backdrop-filter: blur(12px);
+  background: var(--card);
+  padding: 2rem;
+  border-radius: 14px;
+  border-left: 4px solid var(--accent);
+}
+
+a { color: var(--accent); }
+code { background: rgba(255,255,255,0.6); }

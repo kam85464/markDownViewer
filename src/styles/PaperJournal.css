@@ -1,0 +1,25 @@
+:root {
+  --bg: #f7f3e9;
+  --fg: #3b2f2f;
+  --card: #fffdf8;
+  --border: #e0d8c8;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: "Georgia", serif;
+}
+
+.markdown-body {
+  background: var(--card);
+  padding: 2rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+code {
+  background: #efe7d8;
+  padding: 3px 6px;
+  border-radius: 4px;
+}
