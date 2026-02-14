@@ -14,10 +14,24 @@ const md = new MarkdownIt({
   typographer: true,
 });
 
-md.use(mk);
-md.use(hljs);
-md.use(taskLists);
-md.use(plantuml, {
+const safeUse = (plugin: any, options?: any) => {
+  try {
+    if (typeof plugin === 'function') {
+      md.use(plugin, options);
+    } else if (plugin && typeof plugin.default === 'function') {
+      md.use(plugin.default, options);
+    } else {
+      console.warn('Markdown plugin not loaded (invalid type):', plugin);
+    }
+  } catch (e) {
+    console.error('Failed to load markdown plugin:', e);
+  }
+};
+
+safeUse(mk);
+safeUse(hljs);
+safeUse(taskLists);
+safeUse(plantuml, {
   openMarker: '@startuml',
   closeMarker: '@enduml',
 });

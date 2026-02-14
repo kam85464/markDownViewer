@@ -5,6 +5,8 @@ electron.contextBridge.exposeInMainWorld("electron", {
   scanFolder: (path) => electron.ipcRenderer.invoke("scan-folder", path),
   readFile: (path) => electron.ipcRenderer.invoke("read-file", path),
   saveFile: (path, content) => electron.ipcRenderer.invoke("save-file", { filePath: path, content }),
+  saveFileAs: (content) => electron.ipcRenderer.invoke("save-file-as", content),
   getRecentFolders: () => electron.ipcRenderer.invoke("get-recent-folders"),
-  showConfirmDialog: (options) => electron.ipcRenderer.invoke("show-confirm-dialog", options)
+  showConfirmDialog: (options) => electron.ipcRenderer.invoke("show-confirm-dialog", options),
+  exportToPdf: (htmlContent) => electron.ipcRenderer.invoke("export-pdf", htmlContent)
 });

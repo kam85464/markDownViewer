@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import md from '../services/markdownService';
 import mermaid from 'mermaid';
@@ -8,26 +8,43 @@ import 'highlight.js/styles/github-dark.css';
 export const PreviewPane: React.FC = () => {
   const { markdownContent } = useAppStore();
   const containerRef = useRef<HTMLDivElement>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    mermaid.initialize({
-      startOnLoad: false,
-      theme: document.documentElement.classList.contains('dark') ? 'dark' : 'default',
-    });
+    try {
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: document.documentElement.classList.contains('dark') ? 'dark' : 'default',
+      });
+    } catch (e) {
+      console.warn("Mermaid init error:", e);
+    }
   }, []);
 
   useEffect(() => {
     if (containerRef.current) {
-      // 1. Render Markdown
-      containerRef.current.innerHTML = md.render(markdownContent);
+      try {
+        setError(null);
+        // 1. Render Markdown
+        containerRef.current.innerHTML = md.render(markdownContent || '');
 
-      // 2. Render Mermaid Diagrams
-      // We select all divs with class 'mermaid' that we created in markdownService.ts
-      mermaid.run({
-        nodes: containerRef.current.querySelectorAll('.mermaid'),
-      }).catch(err => console.error('Mermaid error:', err));
+        // 2. Render Mermaid Diagrams
+        const mermaidNodes = containerRef.current.querySelectorAll('.mermaid');
+        if (mermaidNodes.length > 0) {
+          mermaid.run({
+            nodes: mermaidNodes,
+          }).catch(err => console.error('Mermaid error:', err));
+        }
+      } catch (e) {
+        console.error("Markdown render error:", e);
+        setError("Failed to render markdown content.");
+      }
     }
   }, [markdownContent]);
+
+  if (error) {
+    return <div className="h-full w-full p-8 text-red-500 bg-white dark:bg-gray-900">{error}</div>;
+  }
 
   return (
     <div className="h-full w-full overflow-y-auto bg-white dark:bg-gray-900 p-8">

@@ -1,12 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { FileText, FolderOpen } from 'lucide-react';
+import { FileText, FolderOpen, Search } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
   const { files, currentFile, selectFile, currentFolder } = useAppStore();
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredFiles = files.filter(file => 
+    file.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   // Group files by parent folder for better visualization
-  const groupedFiles = files.reduce((acc, file) => {
+  const groupedFiles = filteredFiles.reduce((acc, file) => {
     if (!acc[file.parent]) acc[file.parent] = [];
     acc[file.parent].push(file);
     return acc;
@@ -18,9 +23,19 @@ export const Sidebar: React.FC = () => {
         <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
           Explorer
         </h2>
-        <p className="text-xs text-gray-400 truncate mt-1" title={currentFolder || ''}>
+        <p className="text-xs text-gray-400 truncate mt-1 mb-3" title={currentFolder || ''}>
           {currentFolder ? currentFolder.split(/[/\\]/).pop() : 'No folder selected'}
         </p>
+        <div className="relative">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search files..."
+            className="w-full pl-8 pr-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-gray-200"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
       </div>
       
       <div className="flex-1 p-2">
@@ -45,6 +60,11 @@ export const Sidebar: React.FC = () => {
             ))}
           </div>
         ))}
+        {filteredFiles.length === 0 && searchQuery && (
+          <div className="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
+            No files found
+          </div>
+        )}
       </div>
     </div>
   );

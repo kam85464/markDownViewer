@@ -16,7 +16,12 @@ export const fileService = {
   },
   readFile: async (path: string): Promise<string> => {
     if (window.electron) {
-      return await window.electron.readFile(path);
+      try {
+        return await window.electron.readFile(path);
+      } catch (e) {
+        console.error("File read error:", e);
+        throw e;
+      }
     }
     return '';
   },
@@ -25,6 +30,12 @@ export const fileService = {
       return await window.electron.saveFile(path, content);
     }
     return false;
+  },
+  saveFileAs: async (content: string): Promise<string | null> => {
+    if (window.electron) {
+      return await window.electron.saveFileAs(content);
+    }
+    return null;
   },
   getRecentFolders: async (): Promise<string[]> => {
     if (window.electron) {
@@ -39,5 +50,11 @@ export const fileService = {
     // Fallback for browser
     const result = window.confirm(options.message);
     return result ? 0 : 1;
+  },
+  exportToPdf: async (htmlContent: string): Promise<boolean> => {
+    if (window.electron) {
+      return await window.electron.exportToPdf(htmlContent);
+    }
+    return false;
   }
 };

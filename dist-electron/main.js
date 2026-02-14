@@ -15762,3 +15762,53 @@ require$$1$2.ipcMain.handle("save-file", async (_, { filePath, content }) => {
   fs$1.writeFileSync(filePath, content, "utf-8");
   return true;
 });
+require$$1$2.ipcMain.handle("save-file-as", async (_, content) => {
+  if (!win) return null;
+  const { filePath } = await require$$1$2.dialog.showSaveDialog(win, {
+    title: "Save Markdown As",
+    filters: [{ name: "Markdown", extensions: ["md", "markdown"] }]
+  });
+  if (filePath) {
+    fs$1.writeFileSync(filePath, content, "utf-8");
+    return filePath;
+  }
+  return null;
+});
+require$$1$2.ipcMain.handle("export-pdf", async (_, htmlContent) => {
+  if (!win) return false;
+  const { filePath } = await require$$1$2.dialog.showSaveDialog(win, {
+    title: "Export to PDF",
+    filters: [{ name: "PDF", extensions: ["pdf"] }]
+  });
+  if (!filePath) return false;
+  const pdfWindow = new require$$1$2.BrowserWindow({
+    show: false,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true
+    }
+  });
+  const fullHtml = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.0/github-markdown-light.min.css">
+        <style>
+          body { margin: 0; padding: 40px; }
+          .markdown-body { box-sizing: border-box; min-width: 200px; max-width: 980px; margin: 0 auto; }
+        </style>
+      </head>
+      <body class="markdown-body">
+        ${htmlContent}
+      </body>
+    </html>
+  `;
+  await pdfWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(fullHtml)}`);
+  const pdfData = await pdfWindow.webContents.printToPDF({});
+  fs$1.writeFileSync(filePath, pdfData);
+  pdfWindow.close();
+  return true;
+});
