@@ -1,0 +1,28 @@
+:root {
+  --bg: #05060a;
+  --fg: #d0d0d0;
+  --accent: #00eaff;
+  --card: #0d0f14;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  background-image: linear-gradient(#0d0f14 1px, transparent 1px),
+                    linear-gradient(90deg, #0d0f14 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.markdown-body {
+  background: var(--card);
+  padding: 2rem;
+  border-radius: 10px;
+  border: 1px solid var(--accent);
+}
+
+a { color: var(--accent); }
+code { background: #11141c; }
+code {
+  padding: 4px 8px;
+  border-radius: 6px;
+}

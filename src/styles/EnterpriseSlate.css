@@ -1,0 +1,23 @@
+:root {
+  --bg: #f5f7fa;
+  --fg: #1b1f23;
+  --card: #ffffff;
+  --border: #d0d7de;
+  --accent: #0969da;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: "Inter", sans-serif;
+}
+
+.markdown-body {
+  background: var(--card);
+  padding: 2rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+a { color: var(--accent); }
+code { background: #eaeef2; }

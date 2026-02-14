@@ -1,0 +1,20 @@
+:root {
+  --bg: #fdf6e3;
+  --fg: #657b83;
+  --card: #fffdf5;
+  --accent: #268bd2;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+}
+
+.markdown-body {
+  background: var(--card);
+  padding: 2rem;
+  border-radius: 8px;
+}
+
+a { color: var(--accent); }
+code { background: #eee8d5; }

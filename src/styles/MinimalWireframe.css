@@ -1,0 +1,21 @@
+:root {
+  --bg: #ffffff;
+  --fg: #111111;
+  --border: #dcdcdc;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+}
+
+.markdown-body {
+  border: 1px solid var(--border);
+  padding: 2rem;
+  border-radius: 4px;
+}
+
+code {
+  border: 1px solid var(--border);
+  padding: 2px 4px;
+}
