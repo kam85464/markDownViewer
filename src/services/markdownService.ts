@@ -2,7 +2,6 @@ import MarkdownIt from 'markdown-it';
 import mk from 'markdown-it-katex';
 import hljs from 'markdown-it-highlightjs';
 import taskLists from 'markdown-it-task-lists';
-import plantuml from 'markdown-it-plantuml';
 import { Plugin } from '../types/plugin';
 import { format } from 'prettier/standalone';
 import * as prettierPluginMarkdown from 'prettier/plugins/markdown';
@@ -42,6 +41,23 @@ export const createMarkdownParser = (enabledPlugins: Plugin[] = []) => {
 
   // Always use highlight.js and task lists as core features
   safeUse(md, hljs);
+
+  // Wrap the highlighter to prevent errors with unknown languages (like plantuml)
+  const originalHighlight = md.options.highlight;
+  md.options.highlight = (str, lang, attrs) => {
+    if (lang === 'plantuml') {
+      return md.utils.escapeHtml(str);
+    }
+    try {
+      if (originalHighlight) {
+        return originalHighlight(str, lang, attrs);
+      }
+    } catch (e) {
+      console.warn(`Failed to highlight language: ${lang}`, e);
+    }
+    return ''; // Fallback to default escaping
+  };
+
   safeUse(md, taskLists);
 
   // Custom rule to add IDs to headings for TOC navigation
@@ -67,13 +83,6 @@ export const createMarkdownParser = (enabledPlugins: Plugin[] = []) => {
     // This rule is added below regardless, but we could toggle it here if we wanted strict control
   }
 
-  if (isEnabled('plantuml')) {
-    safeUse(md, plantuml, {
-      openMarker: '@startuml',
-      closeMarker: '@enduml',
-    });
-  }
-
   // Custom rule to wrap mermaid code blocks in a div that mermaid.js can find
   const defaultFence = md.renderer.rules.fence || function(tokens, idx, options, env, self) {
     return self.renderToken(tokens, idx, options);
@@ -87,6 +96,12 @@ export const createMarkdownParser = (enabledPlugins: Plugin[] = []) => {
       // Only render mermaid div if enabled, otherwise render code block
       if (isEnabled('mermaid')) {
         return `<div class="mermaid">${token.content}</div>`;
+      }
+    }
+    
+    if (info === 'plantuml') {
+      if (isEnabled('plantuml')) {
+        return `<div class="plantuml">${token.content}</div>`;
       }
     }
     

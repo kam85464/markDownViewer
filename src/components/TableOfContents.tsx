@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { createMarkdownParser, slugify } from '../services/markdownService';
+import { Search, X } from 'lucide-react';
 
 export const TableOfContents: React.FC = () => {
   const { markdownContent, showTOC } = useAppStore();
@@ -99,14 +100,23 @@ export const TableOfContents: React.FC = () => {
       <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">
         Table of Contents
       </h3>
-      <div className="mb-4">
+      <div className="mb-4 relative">
+        <Search className="absolute left-2 top-1.5 h-4 w-4 text-gray-400" />
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Filter..."
-          className="w-full px-2 py-1 text-sm border rounded bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="w-full pl-8 pr-8 py-1 text-sm border rounded bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery('')}
+            className="absolute right-2 top-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+          >
+            <X size={14} />
+          </button>
+        )}
       </div>
       <ul className="space-y-2">
         {headers.map((header, index) => {

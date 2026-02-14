@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { createMarkdownParser } from '../services/markdownService';
 import mermaid from 'mermaid';
+import plantumlEncoder from 'plantuml-encoder';
 import 'katex/dist/katex.min.css';
 import 'highlight.js/styles/github-dark.css';
 
@@ -40,6 +41,19 @@ export const PreviewPane: React.FC = () => {
             nodes: mermaidNodes,
           }).catch(err => console.error('Mermaid error:', err));
         }
+
+        // 3. Render PlantUML diagrams
+        const plantUMLNodes = contentRef.current.querySelectorAll('div.plantuml');
+        plantUMLNodes.forEach(node => {
+          if (node.textContent) {
+            const encoded = plantumlEncoder.encode(node.textContent);
+            const url = `https://www.plantuml.com/plantuml/svg/${encoded}`;
+            const img = document.createElement('img');
+            img.src = url;
+            node.innerHTML = '';
+            node.appendChild(img);
+          }
+        });
       } catch (e) {
         console.error("Markdown render error:", e);
         setError("Failed to render markdown content.");

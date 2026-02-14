@@ -62,10 +62,14 @@ export const Toolbar: React.FC = () => {
   };
 
   const handleRecentClick = async (path: string) => {
-    setFolder(path);
-    const files = await fileService.scanFolder(path);
-    setFiles(files);
-    setShowRecent(false);
+    try {
+      setFolder(path);
+      const files = await fileService.scanFolder(path);
+      setFiles(files);
+      setShowRecent(false);
+    } catch (error) {
+      console.error('Failed to open recent folder:', error);
+    }
   };
 
   const handleCloseFolder = async () => {
