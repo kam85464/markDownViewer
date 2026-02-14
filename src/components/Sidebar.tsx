@@ -6,9 +6,9 @@ export const Sidebar: React.FC = () => {
   const { files, currentFile, selectFile, currentFolder } = useAppStore();
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredFiles = files.filter(file => 
+  const filteredFiles = files ? files.filter(file =>
     file.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  ) : [];
 
   // Group files by parent folder for better visualization
   const groupedFiles = filteredFiles.reduce((acc, file) => {

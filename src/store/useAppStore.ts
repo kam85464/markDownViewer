@@ -17,8 +17,6 @@ interface AppState {
   recentFolders: string[];
   cursorPosition: { line: number; column: number };
   findTrigger: number;
-  isZenMode: boolean;
-  isPresentationMode: boolean;
   isDistractionFreeMode: boolean;
   isTypewriterMode: boolean;
   autoSaveEnabled: boolean;
@@ -51,8 +49,6 @@ interface AppState {
   closeFolder: () => void;
   setCursorPosition: (line: number, column: number) => void;
   triggerFind: () => void;
-  toggleZenMode: () => void;
-  togglePresentationMode: () => void;
   toggleDistractionFreeMode: () => void;
   toggleTypewriterMode: () => void;
   toggleAutoSave: () => void;
@@ -85,8 +81,6 @@ export const useAppStore = create<AppState>((set, get) => ({
   recentFolders: [],
   cursorPosition: { line: 1, column: 1 },
   findTrigger: 0,
-  isZenMode: false,
-  isPresentationMode: false,
   isDistractionFreeMode: false,
   isTypewriterMode: false,
   autoSaveEnabled: settingsService.get('autoSaveEnabled'),
@@ -299,10 +293,6 @@ export const useAppStore = create<AppState>((set, get) => ({
   setCursorPosition: (line, column) => set({ cursorPosition: { line, column } }),
 
   triggerFind: () => set((state) => ({ findTrigger: state.findTrigger + 1 })),
-
-  toggleZenMode: () => set((state) => ({ isZenMode: !state.isZenMode })),
-
-  togglePresentationMode: () => set((state) => ({ isPresentationMode: !state.isPresentationMode })),
 
   toggleDistractionFreeMode: () => set((state) => ({ isDistractionFreeMode: !state.isDistractionFreeMode })),
 

@@ -32,34 +32,34 @@ const ToolbarButton: React.FC<{
   </button>
 );
 
+
+
 export const Toolbar: React.FC = () => {
   const { 
     setFolder, 
     setFiles, 
     saveCurrentFile, 
     isEditing, 
-    toggleEditMode, 
-    isDarkMode, 
-    toggleDarkMode,
-    currentFile,
-    closeFolder,
-    currentFolder,
-    recentFolders,
-    loadRecentFolders,
-    markdownContent,
-    originalContent,
+    toggleEditMode,
+    isDarkMode,
     saveAs,
+
     triggerFind,
-    isZenMode,
-    toggleZenMode,
-    togglePresentationMode,
     isDistractionFreeMode,
     toggleDistractionFreeMode,
-    splitDirection,
     toggleSplitDirection,
     toggleSettings,
     wordWrap,
-    toggleWordWrap,
+
+    markdownContent,
+    originalContent,
+    recentFolders,
+    loadRecentFolders,
+    closeFolder,
+    toggleDarkMode,
+    currentFolder,
+    currentFile,
+    splitDirection,
     formatCurrentFile
   } = useAppStore();
 
@@ -68,7 +68,7 @@ export const Toolbar: React.FC = () => {
 
   useEffect(() => {
     loadRecentFolders();
-    
+
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setShowRecent(false);
@@ -107,7 +107,7 @@ export const Toolbar: React.FC = () => {
         title: 'Unsaved Changes',
         message: 'You have unsaved changes. Are you sure you want to close the folder?',
         detail: 'Your changes will be lost if you do not save them.'
-      });
+    });
       
       if (response === 1) return; // User clicked 'No'
     }
@@ -130,10 +130,10 @@ export const Toolbar: React.FC = () => {
     <div className="h-12 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 draggable">
       <div className="flex items-center space-x-1 no-drag">
         <div className="relative flex items-center" ref={dropdownRef}>
-          <button onClick={handleOpenFolder} className="btn-toolbar rounded-r-none border-r border-gray-300 dark:border-gray-600" title="Open Folder">
+          <button onClick={handleOpenFolder} className="btn-toolbar rounded-r-none border-r border-gray-300 dark:border-gray-600"title="Open Folder">
             <FolderOpen size={18} />
           </button>
-          <button 
+          <button
             onClick={() => setShowRecent(!showRecent)} 
             className="btn-toolbar rounded-l-none px-1" 
             title="Recent Folders"
@@ -181,15 +181,12 @@ export const Toolbar: React.FC = () => {
         {isEditing && (
           <ToolbarButton icon={<Sparkles size={18} />} label="Format" onClick={formatCurrentFile} showLabel={isEditing} title="Format Document" />
         )}
-        <ToolbarButton icon={<WrapText size={18} />} label="Wrap" onClick={toggleWordWrap} showLabel={isEditing} title="Toggle Word Wrap" highlight={wordWrap} />
-        <ToolbarButton icon={<Projector size={18} />} label="Present" onClick={togglePresentationMode} showLabel={isEditing} title="Presentation Mode" />
-        <ToolbarButton icon={<Scan size={18} />} label="Distraction Free" onClick={toggleDistractionFreeMode} showLabel={isEditing} title={isDistractionFreeMode ? "Exit Distraction Free Mode" : "Distraction Free Mode"} highlight={isDistractionFreeMode} />
-        <ToolbarButton icon={isZenMode ? <Minimize size={18} /> : <Maximize size={18} />} label={isZenMode ? "Exit Zen" : "Zen"} onClick={toggleZenMode} showLabel={isEditing} title={isZenMode ? "Exit Zen Mode" : "Enter Zen Mode"} />
-        <button onClick={toggleEditMode} className="btn-toolbar" title={isEditing ? "Switch to Preview" : "Switch to Edit"}>
+        <ToolbarButton icon={<Scan size={18} />} label="Zen Mode" onClick={toggleDistractionFreeMode} showLabel={isEditing} title="Zen Mode"  />
           {isEditing ? <Eye size={18} /> : <Columns size={18} />}
-          <span className="ml-2 text-sm">{isEditing ? 'Preview' : 'Edit'}</span>
+        <ToolbarButton icon={<Scan size={18} />} label="Distraction Free" onClick={toggleDistractionFreeMode} showLabel={isEditing} title="Distraction Free Mode"  />
+        <span className="ml-2 text-sm">{isEditing ? 'Preview' : 'Edit'}</span>
+        <button onClick={toggleEditMode} className="btn-toolbar" title={isEditing ? "Switch to Preview" : "Switch to Edit"}>
         </button>
-        
         <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-2" />
 
         <button onClick={toggleDarkMode} className="btn-toolbar">
@@ -200,6 +197,7 @@ export const Toolbar: React.FC = () => {
           <Settings size={18} />
         </button>
       </div>
+
     </div>
   );
 };

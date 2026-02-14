@@ -7,7 +7,7 @@ import md from '../services/markdownService';
 import { X } from 'lucide-react';
 
 export const Presentation: React.FC = () => {
-  const { markdownContent, togglePresentationMode } = useAppStore();
+  const { markdownContent } = useAppStore();
   const deckRef = useRef<HTMLDivElement>(null);
   const revealInstance = useRef<Reveal.Api | null>(null);
 
@@ -42,7 +42,7 @@ export const Presentation: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-[100] bg-black h-screen w-screen overflow-hidden">
-      <button onClick={togglePresentationMode} className="absolute top-4 right-4 z-[101] p-2 bg-gray-800 text-white rounded-full hover:bg-gray-700 opacity-50 hover:opacity-100 transition-opacity">
+      {/* <button onClick={togglePresentationMode} className="absolute top-4 right-4 z-[101] p-2 bg-gray-800 text-white rounded-full hover:bg-gray-700 opacity-50 hover:opacity-100 transition-opacity">
         <X size={24} />
       </button>
       <div className="reveal h-full w-full" ref={deckRef}>
@@ -50,6 +50,7 @@ export const Presentation: React.FC = () => {
           {slides.map((html, index) => <section key={index} dangerouslySetInnerHTML={{ __html: html }} />)}
         </div>
       </div>
+       */}
     </div>
   );
 };

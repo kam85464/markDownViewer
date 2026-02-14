@@ -30,4 +30,18 @@ export default defineConfig({
   optimizeDeps: {
     include: ['reveal.js', 'monaco-vim', 'monaco-editor', 'prettier'],
   },
+  
+  build: {
+    chunkSizeWarningLimit: 2000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'mermaid': ['mermaid'],
+          'monaco': ['monaco-editor', 'monaco-vim'],
+          'markdown': ['marked', 'markdown-it', 'markdown-it-abbr', 'markdown-it-container'],
+          'math': ['katex'],
+        },
+      },
+    },
+  },
 })
