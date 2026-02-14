@@ -21,7 +21,8 @@ export const EditorPane: React.FC = () => {
     });
     editor.onDidScrollChange((e) => {
       if (isSyncScrollRef.current) {
-        const maxScroll = e.scrollHeight - e.viewHeight;
+        const layoutInfo = editor.getLayoutInfo();
+        const maxScroll = e.scrollHeight - layoutInfo.height;
         const percentage = maxScroll > 0 ? e.scrollTop / maxScroll : 0;
         window.dispatchEvent(new CustomEvent('editor-scroll', { detail: percentage }));
       }
