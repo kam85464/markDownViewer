@@ -8,7 +8,6 @@ import { StatusBar } from './StatusBar';
 import { useAppStore } from '../store/useAppStore';
 import { Presentation } from './Presentation';
 import { ErrorBoundary } from './ErrorBoundary';
-import { PluginsModal } from './PluginsModal';
 import { TableOfContents } from './TableOfContents';
 import { SettingsModal } from './SettingsModal';
 import { Save } from 'lucide-react';
@@ -29,7 +28,6 @@ export const Layout: React.FC = () => {
   return (
     <div className="flex flex-col h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       {isPresentationMode && <Presentation />}
-      <PluginsModal />
       <SettingsModal />
       <Toolbar />
       <div className="flex flex-1 overflow-hidden">
