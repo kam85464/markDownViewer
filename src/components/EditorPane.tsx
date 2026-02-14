@@ -5,7 +5,7 @@ import { dracula, nord } from '../utils/themes';
 import { initVimMode } from 'monaco-vim';
 
 export const EditorPane: React.FC = () => {
-  const { markdownContent, setMarkdownContent, theme, setCursorPosition, findTrigger, isVimMode, isZenMode, isDistractionFreeMode, isTypewriterMode, isSyncScroll, showMinimap, wordWrap, customCSS } = useAppStore();
+  const { markdownContent, setMarkdownContent, theme, setCursorPosition, findTrigger, isVimMode, isTypewriterMode, isSyncScroll, showMinimap, wordWrap, customCSS } = useAppStore();
   const editorRef = useRef<any>(null);
   const vimModeRef = useRef<any>(null);
   const isTypewriterModeRef = useRef(isTypewriterMode);
@@ -45,7 +45,7 @@ export const EditorPane: React.FC = () => {
     if (!editorRef.current) return;
 
     // Small delay to ensure the DOM is ready if switching from Zen Mode
-    if (isVimMode && !isZenMode && !isDistractionFreeMode) {
+    if (isVimMode) {
       const statusNode = document.getElementById('vim-status');
       if (statusNode) {
         vimModeRef.current = initVimMode(editorRef.current, statusNode);
@@ -63,7 +63,7 @@ export const EditorPane: React.FC = () => {
         vimModeRef.current = null;
       }
     };
-  }, [isVimMode, isZenMode, isDistractionFreeMode]);
+  }, [isVimMode]);
 
   useEffect(() => {
     isTypewriterModeRef.current = isTypewriterMode;

@@ -15,6 +15,7 @@ export const PreviewPane: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const isScrollingFromEditor = useRef(false);
 
+
   // Re-create the markdown parser whenever the plugins list changes
   const md = useMemo(() => createMarkdownParser(plugins), [plugins]);
 
@@ -29,37 +30,50 @@ export const PreviewPane: React.FC = () => {
     }
   }, []);
 
+
   useEffect(() => {
     if (contentRef.current) {
-      try {
-        setError(null);
-        // 1. Render Markdown
-        contentRef.current.innerHTML = md.render(markdownContent || '');
-        
-        // 2. Render Mermaid Diagrams (only if the plugin is enabled and nodes exist)
-        const mermaidNodes = contentRef.current.querySelectorAll('.mermaid');
-        if (mermaidNodes.length > 0) {
-          mermaid.run({
-            nodes: Array.from(mermaidNodes) as any,
-          }).catch(err => console.error('Mermaid error:', err));
-        }
+      const renderMermaid = async () => {
+        try {
+          const ref = contentRef.current;
+          if (!ref) return;
 
-        // 3. Render PlantUML diagrams
-        const plantUMLNodes = contentRef.current.querySelectorAll('div.plantuml');
-        plantUMLNodes.forEach(node => {
-          if (node.textContent) {
-            const encoded = plantumlEncoder.encode(node.textContent);
-            const url = `https://www.plantuml.com/plantuml/svg/${encoded}`;
-            const img = document.createElement('img');
-            img.src = url;
-            node.innerHTML = '';
-            node.appendChild(img);
+          setError(null);
+          // 1. Render Markdown
+          ref.innerHTML = md.render(markdownContent || '');
+
+          // 2. Render Mermaid Diagrams (only if the plugin is enabled and nodes exist)
+          const mermaidNodes = ref.querySelectorAll('.mermaid');
+          if (mermaidNodes.length > 0) {
+            try {
+              await mermaid.run({
+                nodes: Array.from(mermaidNodes) as any,
+              });
+            } catch (err) {
+              console.error('Mermaid error:', err);
+              setError("Failed to render mermaid diagram.");
+            }
           }
-        });
-      } catch (e) {
-        console.error("Markdown render error:", e);
-        setError("Failed to render markdown content.");
-      }
+
+          // 3. Render PlantUML diagrams
+          const plantUMLNodes = ref.querySelectorAll('div.plantuml');
+          plantUMLNodes.forEach(node => {
+            if (node.textContent) {
+              const encoded = plantumlEncoder.encode(node.textContent);
+              const url = `https://www.plantuml.com/plantuml/svg/${encoded}`;
+              const img = document.createElement('img');
+              img.src = url;
+              node.innerHTML = '';
+              node.appendChild(img);
+            }
+          });
+        } catch (e) {
+          console.error("Markdown render error:", e);
+          setError("Failed to render markdown content.");
+        }
+      };
+
+      renderMermaid();
     }
   }, [markdownContent, md]); // Re-render when content OR parser changes
 
