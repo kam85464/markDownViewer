@@ -2,7 +2,35 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { fileService } from '../services/fileService';
 import md from '../services/markdownService';
-import { FolderOpen, Save, Moon, Sun, Columns, Eye, FolderX, ChevronDown, FileDown, FilePlus, Search, Maximize, Minimize, Projector, Scan, FileCode, Package, Rows, Columns as ColumnsIcon, Settings, WrapText, Sparkles } from 'lucide-react';
+import { FolderOpen, Save, Moon, Sun, Columns, Eye, FolderX, ChevronDown, FileDown, FilePlus, Search, Maximize, Minimize, Projector, Scan, FileCode, Rows, Columns as ColumnsIcon, Settings, WrapText, Sparkles } from 'lucide-react';
+
+// Helper component for toolbar buttons with conditional labels
+const ToolbarButton: React.FC<{
+  icon: React.ReactNode;
+  label?: string;
+  onClick: () => void;
+  disabled?: boolean;
+  title?: string;
+  showLabel?: boolean;
+  highlight?: boolean;
+  className?: string;
+}> = ({ icon, label, onClick, disabled, title, showLabel, highlight, className = '' }) => (
+  <button
+    onClick={onClick}
+    disabled={disabled}
+    title={title}
+    className={`
+      flex items-center gap-1 px-3 py-2 rounded text-sm font-medium transition-colors
+      ${highlight ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}
+      hover:bg-gray-100 dark:hover:bg-gray-700
+      disabled:opacity-50 disabled:cursor-not-allowed
+      ${className}
+    `}
+  >
+    <span className="flex items-center">{icon}</span>
+    {showLabel && label && <span>{label}</span>}
+  </button>
+);
 
 export const Toolbar: React.FC = () => {
   const { 
@@ -27,7 +55,6 @@ export const Toolbar: React.FC = () => {
     togglePresentationMode,
     isDistractionFreeMode,
     toggleDistractionFreeMode,
-    togglePluginsModal,
     splitDirection,
     toggleSplitDirection,
     toggleSettings,
@@ -101,7 +128,7 @@ export const Toolbar: React.FC = () => {
 
   return (
     <div className="h-12 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 draggable">
-      <div className="flex items-center space-x-2 no-drag">
+      <div className="flex items-center space-x-1 no-drag">
         <div className="relative flex items-center" ref={dropdownRef}>
           <button onClick={handleOpenFolder} className="btn-toolbar rounded-r-none border-r border-gray-300 dark:border-gray-600" title="Open Folder">
             <FolderOpen size={18} />
@@ -138,54 +165,29 @@ export const Toolbar: React.FC = () => {
             <FolderX size={18} />
           </button>
         )}
-        <button onClick={handleExportPdf} disabled={!markdownContent} className="btn-toolbar disabled:opacity-50" title="Export to PDF">
-          <FileDown size={18} />
-        </button>
-        <button onClick={handleExportHtml} disabled={!markdownContent} className="btn-toolbar disabled:opacity-50" title="Export to HTML">
-          <FileCode size={18} />
-        </button>
-        <button onClick={saveAs} disabled={!markdownContent} className="btn-toolbar disabled:opacity-50" title="Save As">
-          <FilePlus size={18} />
-        </button>
-        <button onClick={saveCurrentFile} disabled={!currentFile} className="btn-toolbar disabled:opacity-50" title="Save">
-          <Save size={18} />
-        </button>
+        <ToolbarButton icon={<FileDown size={18} />} label="PDF" onClick={handleExportPdf} disabled={!markdownContent} showLabel={isEditing} title="Export to PDF" />
+        <ToolbarButton icon={<FileCode size={18} />} label="HTML" onClick={handleExportHtml} disabled={!markdownContent} showLabel={isEditing} title="Export to HTML" />
+        <ToolbarButton icon={<FilePlus size={18} />} label="Save As" onClick={saveAs} disabled={!markdownContent} showLabel={isEditing} title="Save As" />
+        <ToolbarButton icon={<Save size={18} />} label="Save" onClick={saveCurrentFile} disabled={!currentFile} showLabel={isEditing} title="Save" />
       </div>
 
-      <div className="flex items-center space-x-2 no-drag">
-        <button onClick={togglePluginsModal} className="btn-toolbar" title="Plugins">
-          <Package size={18} />
-        </button>
+      <div className="flex items-center space-x-1 no-drag">
         {isEditing && (
-          <button onClick={toggleSplitDirection} className="btn-toolbar" title={splitDirection === 'vertical' ? "Split Horizontally" : "Split Vertically"}>
-            {splitDirection === 'vertical' ? <Rows size={18} /> : <ColumnsIcon size={18} />}
-          </button>
+          <ToolbarButton icon={splitDirection === 'vertical' ? <Rows size={18} /> : <ColumnsIcon size={18} />} label={splitDirection === 'vertical' ? "Split H" : "Split V"} onClick={toggleSplitDirection} showLabel={isEditing} title={splitDirection === 'vertical' ? "Split Horizontally" : "Split Vertically"} />
         )}
         {isEditing && (
-          <button onClick={triggerFind} className="btn-toolbar" title="Find & Replace">
-            <Search size={18} />
-          </button>
+          <ToolbarButton icon={<Search size={18} />} label="Find" onClick={triggerFind} showLabel={isEditing} title="Find & Replace" />
         )}
         {isEditing && (
-          <button onClick={formatCurrentFile} className="btn-toolbar" title="Format Document">
-            <Sparkles size={18} />
-          </button>
+          <ToolbarButton icon={<Sparkles size={18} />} label="Format" onClick={formatCurrentFile} showLabel={isEditing} title="Format Document" />
         )}
-        <button onClick={toggleWordWrap} className={`btn-toolbar ${wordWrap ? 'text-blue-600 dark:text-blue-400' : ''}`} title="Toggle Word Wrap">
-          <WrapText size={18} />
-        </button>
-        <button onClick={togglePresentationMode} className="btn-toolbar" title="Presentation Mode">
-          <Projector size={18} />
-        </button>
-        <button onClick={toggleDistractionFreeMode} className={`btn-toolbar ${isDistractionFreeMode ? 'text-blue-600 dark:text-blue-400' : ''}`} title={isDistractionFreeMode ? "Exit Distraction Free Mode" : "Distraction Free Mode (Hides All Chrome)"}>
-          <Scan size={18} />
-        </button>
-        <button onClick={toggleZenMode} className="btn-toolbar" title={isZenMode ? "Exit Zen Mode" : "Enter Zen Mode (Hides Sidebar)"}>
-          {isZenMode ? <Minimize size={18} /> : <Maximize size={18} />}
-        </button>
+        <ToolbarButton icon={<WrapText size={18} />} label="Wrap" onClick={toggleWordWrap} showLabel={isEditing} title="Toggle Word Wrap" highlight={wordWrap} />
+        <ToolbarButton icon={<Projector size={18} />} label="Present" onClick={togglePresentationMode} showLabel={isEditing} title="Presentation Mode" />
+        <ToolbarButton icon={<Scan size={18} />} label="Distraction Free" onClick={toggleDistractionFreeMode} showLabel={isEditing} title={isDistractionFreeMode ? "Exit Distraction Free Mode" : "Distraction Free Mode"} highlight={isDistractionFreeMode} />
+        <ToolbarButton icon={isZenMode ? <Minimize size={18} /> : <Maximize size={18} />} label={isZenMode ? "Exit Zen" : "Zen"} onClick={toggleZenMode} showLabel={isEditing} title={isZenMode ? "Exit Zen Mode" : "Enter Zen Mode"} />
         <button onClick={toggleEditMode} className="btn-toolbar" title={isEditing ? "Switch to Preview" : "Switch to Edit"}>
           {isEditing ? <Eye size={18} /> : <Columns size={18} />}
-          <span className="ml-2 text-sm">{isEditing ? 'Preview Mode' : 'Edit Mode'}</span>
+          <span className="ml-2 text-sm">{isEditing ? 'Preview' : 'Edit'}</span>
         </button>
         
         <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-2" />
