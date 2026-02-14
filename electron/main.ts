@@ -15,10 +15,10 @@ function createWindow() {
   win = new BrowserWindow({
     width: bounds?.width || 1200,
     height: bounds?.height || 800,
-    x: bounds?.x,
-    y: bounds?.y,
+    x: bounds?.x || undefined,
+    y: bounds?.y || undefined,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.resolve(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
     },

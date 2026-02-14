@@ -170,7 +170,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   saveAs: async () => {
-    const { markdownContent, currentFolder } = get();
+    const { markdownContent, currentFolder, setFiles, currentFile, files } = get();
     const newPath = await (fileService.saveFileAs ? fileService.saveFileAs(markdownContent) : Promise.resolve(null));
     if (newPath) {
       // If we have a folder open, rescan to see if the new file is in it
