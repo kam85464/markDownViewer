@@ -13,6 +13,7 @@ export interface IElectronAPI {
   getRecentFolders: () => Promise<string[]>;
   showConfirmDialog: (options: any) => Promise<number>;
   exportToPdf: (htmlContent: string) => Promise<boolean>;
+  exportToHtml: (htmlContent: string) => Promise<boolean>;
 }
 
 declare global {

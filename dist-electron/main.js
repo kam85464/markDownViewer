@@ -15812,3 +15812,36 @@ require$$1$2.ipcMain.handle("export-pdf", async (_, htmlContent) => {
   pdfWindow.close();
   return true;
 });
+require$$1$2.ipcMain.handle("export-html", async (_, htmlContent) => {
+  if (!win) return false;
+  const { filePath } = await require$$1$2.dialog.showSaveDialog(win, {
+    title: "Export to HTML",
+    filters: [{ name: "HTML", extensions: ["html"] }]
+  });
+  if (!filePath) return false;
+  const fullHtml = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Exported Markdown</title>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.0/github-markdown-light.min.css">
+        <style>
+          body { margin: 0; padding: 40px; background-color: #ffffff; }
+          .markdown-body { box-sizing: border-box; min-width: 200px; max-width: 980px; margin: 0 auto; }
+          @media (prefers-color-scheme: dark) {
+            body { background-color: #0d1117; }
+            .markdown-body { color: #c9d1d9; }
+          }
+        </style>
+      </head>
+      <body class="markdown-body">
+        ${htmlContent}
+      </body>
+    </html>
+  `;
+  fs$1.writeFileSync(filePath, fullHtml, "utf-8");
+  return true;
+});

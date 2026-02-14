@@ -8,5 +8,6 @@ electron.contextBridge.exposeInMainWorld("electron", {
   saveFileAs: (content) => electron.ipcRenderer.invoke("save-file-as", content),
   getRecentFolders: () => electron.ipcRenderer.invoke("get-recent-folders"),
   showConfirmDialog: (options) => electron.ipcRenderer.invoke("show-confirm-dialog", options),
-  exportToPdf: (htmlContent) => electron.ipcRenderer.invoke("export-pdf", htmlContent)
+  exportToPdf: (htmlContent) => electron.ipcRenderer.invoke("export-pdf", htmlContent),
+  exportToHtml: (htmlContent) => electron.ipcRenderer.invoke("export-html", htmlContent)
 });

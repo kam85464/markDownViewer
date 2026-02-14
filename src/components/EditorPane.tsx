@@ -5,10 +5,11 @@ import { dracula, nord } from '../utils/themes';
 import { initVimMode } from 'monaco-vim';
 
 export const EditorPane: React.FC = () => {
-  const { markdownContent, setMarkdownContent, theme, setCursorPosition, findTrigger, isVimMode, isZenMode, isDistractionFreeMode, isTypewriterMode } = useAppStore();
+  const { markdownContent, setMarkdownContent, theme, setCursorPosition, findTrigger, isVimMode, isZenMode, isDistractionFreeMode, isTypewriterMode, isSyncScroll, showMinimap, wordWrap } = useAppStore();
   const editorRef = useRef<any>(null);
   const vimModeRef = useRef<any>(null);
   const isTypewriterModeRef = useRef(isTypewriterMode);
+  const isSyncScrollRef = useRef(isSyncScroll);
 
   const handleEditorDidMount: OnMount = (editor) => {
     editorRef.current = editor;
@@ -16,6 +17,13 @@ export const EditorPane: React.FC = () => {
       setCursorPosition(e.position.lineNumber, e.position.column);
       if (isTypewriterModeRef.current) {
         editor.revealLineInCenter(e.position.lineNumber);
+      }
+    });
+    editor.onDidScrollChange((e) => {
+      if (isSyncScrollRef.current) {
+        const maxScroll = e.scrollHeight - e.viewHeight;
+        const percentage = maxScroll > 0 ? e.scrollTop / maxScroll : 0;
+        window.dispatchEvent(new CustomEvent('editor-scroll', { detail: percentage }));
       }
     });
   };
@@ -58,12 +66,22 @@ export const EditorPane: React.FC = () => {
   useEffect(() => {
     isTypewriterModeRef.current = isTypewriterMode;
     if (isTypewriterMode && editorRef.current) {
+      editorRef.current.updateOptions({ 
+        scrollBeyondLastLine: true,
+        padding: { top: 16, bottom: 16 }
+      });
       const position = editorRef.current.getPosition();
       if (position) {
         editorRef.current.revealLineInCenter(position.lineNumber);
       }
+    } else if (!isTypewriterMode && editorRef.current) {
+      editorRef.current.updateOptions({ scrollBeyondLastLine: false, padding: { top: 16, bottom: 16 } });
     }
   }, [isTypewriterMode]);
+
+  useEffect(() => {
+    isSyncScrollRef.current = isSyncScroll;
+  }, [isSyncScroll]);
 
   return (
     <div className="h-full w-full overflow-hidden">
@@ -76,10 +94,10 @@ export const EditorPane: React.FC = () => {
         onMount={handleEditorDidMount}
         beforeMount={handleBeforeMount}
         options={{
-          minimap: { enabled: false },
-          wordWrap: 'on',
+          minimap: { enabled: showMinimap },
+          wordWrap: wordWrap ? 'on' : 'off',
           fontSize: 14,
-          scrollBeyondLastLine: false,
+          scrollBeyondLastLine: isTypewriterMode, // Dynamic option
           automaticLayout: true,
           padding: { top: 16, bottom: 16 },
         }}

@@ -56,5 +56,11 @@ export const fileService = {
       return await window.electron.exportToPdf(htmlContent);
     }
     return false;
+  },
+  exportToHtml: async (htmlContent: string): Promise<boolean> => {
+    if (window.electron) {
+      return await window.electron.exportToHtml(htmlContent);
+    }
+    return false;
   }
 };

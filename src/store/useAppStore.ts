@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { FileItem } from '../types/global';
+import { Plugin } from '../types/plugin';
 import { fileService } from '../services/fileService';
+import { formatMarkdown } from '../services/markdownService';
 
 interface AppState {
   currentFolder: string | null;
@@ -20,6 +22,14 @@ interface AppState {
   isTypewriterMode: boolean;
   isVimMode: boolean;
   theme: string;
+  showPlugins: boolean;
+  plugins: Plugin[];
+  splitDirection: 'vertical' | 'horizontal';
+  showTOC: boolean;
+  showMinimap: boolean;
+  isSyncScroll: boolean;
+  wordWrap: boolean;
+  showSettings: boolean;
   
   setFolder: (folder: string) => void;
   setFiles: (files: FileItem[]) => void;
@@ -42,7 +52,17 @@ interface AppState {
   toggleDistractionFreeMode: () => void;
   toggleTypewriterMode: () => void;
   toggleVimMode: () => void;
+  togglePluginsModal: () => void;
+  enablePlugin: (id: string) => void;
+  disablePlugin: (id: string) => void;
+  toggleSplitDirection: () => void;
+  toggleTOC: () => void;
+  toggleMinimap: () => void;
+  toggleSyncScroll: () => void;
   setTheme: (theme: string) => void;
+  toggleWordWrap: () => void;
+  toggleSettings: () => void;
+  formatCurrentFile: () => Promise<void>;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -63,6 +83,20 @@ export const useAppStore = create<AppState>((set, get) => ({
   isTypewriterMode: false,
   isVimMode: false,
   theme: 'vs-dark',
+  showPlugins: false,
+  plugins: [
+    { id: 'core-markdown', name: 'Core Markdown', description: 'Basic markdown support', version: '1.0.0', author: 'System', enabled: true },
+    { id: 'mermaid', name: 'Mermaid Diagrams', description: 'Render Mermaid diagrams', version: '1.0.0', author: 'System', enabled: true },
+    { id: 'katex', name: 'KaTeX Math', description: 'Render math equations', version: '1.0.0', author: 'System', enabled: true },
+    { id: 'plantuml', name: 'PlantUML', description: 'Render PlantUML diagrams', version: '1.0.0', author: 'System', enabled: true },
+    { id: 'community-theme-pack', name: 'Community Themes', description: 'Additional editor themes (Demo)', version: '0.1.0', author: 'Community', enabled: true },
+  ],
+  splitDirection: 'vertical',
+  showTOC: true,
+  showMinimap: false,
+  isSyncScroll: true,
+  wordWrap: true,
+  showSettings: false,
 
   setFolder: (folder) => set({ currentFolder: folder }),
   setFiles: (files) => set({ files }),
@@ -257,5 +291,47 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   toggleZenMode: () => set((state) => ({ isZenMode: !state.isZenMode })),
 
-  togglePresentationMode: () => set((state) => ({ isPresentationMode: !state.isPresentationMode }))
+  togglePresentationMode: () => set((state) => ({ isPresentationMode: !state.isPresentationMode })),
+
+  toggleDistractionFreeMode: () => set((state) => ({ isDistractionFreeMode: !state.isDistractionFreeMode })),
+
+  toggleTypewriterMode: () => set((state) => ({ isTypewriterMode: !state.isTypewriterMode })),
+
+  toggleVimMode: () => set((state) => ({ isVimMode: !state.isVimMode })),
+
+  togglePluginsModal: () => set((state) => ({ showPlugins: !state.showPlugins })),
+
+  enablePlugin: (id) => set((state) => ({
+    plugins: state.plugins.map(p => p.id === id ? { ...p, enabled: true } : p)
+  })),
+
+  disablePlugin: (id) => set((state) => ({
+    plugins: state.plugins.map(p => p.id === id ? { ...p, enabled: false } : p)
+  })),
+
+  toggleSplitDirection: () => set((state) => ({ splitDirection: state.splitDirection === 'vertical' ? 'horizontal' : 'vertical' })),
+
+  toggleTOC: () => set((state) => ({ showTOC: !state.showTOC })),
+
+  toggleMinimap: () => set((state) => ({ showMinimap: !state.showMinimap })),
+
+  toggleSyncScroll: () => set((state) => ({ isSyncScroll: !state.isSyncScroll })),
+
+  setTheme: (theme) => set(() => {
+    const isDark = theme !== 'light';
+    if (isDark) document.documentElement.classList.add('dark');
+    else document.documentElement.classList.remove('dark');
+    return { theme, isDarkMode: isDark };
+  }),
+
+  toggleWordWrap: () => set((state) => ({ wordWrap: !state.wordWrap })),
+
+  toggleSettings: () => set((state) => ({ showSettings: !state.showSettings })),
+
+  formatCurrentFile: async () => {
+    const { markdownContent } = get();
+    if (!markdownContent) return;
+    const formatted = await formatMarkdown(markdownContent);
+    set({ markdownContent: formatted });
+  }
 }));

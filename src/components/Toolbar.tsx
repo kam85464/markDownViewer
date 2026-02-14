@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { fileService } from '../services/fileService';
 import md from '../services/markdownService';
-import { FolderOpen, Save, Moon, Sun, Columns, Eye, FolderX, ChevronDown, FileDown, FilePlus, Search, Maximize, Minimize, Projector, Palette, Keyboard, Scan, AlignVerticalJustifyCenter } from 'lucide-react';
+import { FolderOpen, Save, Moon, Sun, Columns, Eye, FolderX, ChevronDown, FileDown, FilePlus, Search, Maximize, Minimize, Projector, Scan, FileCode, Package, Rows, Columns as ColumnsIcon, Settings, WrapText, Sparkles } from 'lucide-react';
 
 export const Toolbar: React.FC = () => {
   const { 
@@ -27,18 +27,17 @@ export const Toolbar: React.FC = () => {
     togglePresentationMode,
     isDistractionFreeMode,
     toggleDistractionFreeMode,
-    isTypewriterMode,
-    toggleTypewriterMode,
-    theme,
-    setTheme,
-    isVimMode,
-    toggleVimMode
+    togglePluginsModal,
+    splitDirection,
+    toggleSplitDirection,
+    toggleSettings,
+    wordWrap,
+    toggleWordWrap,
+    formatCurrentFile
   } = useAppStore();
 
   const [showRecent, setShowRecent] = useState(false);
-  const [showThemes, setShowThemes] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const themeRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadRecentFolders();
@@ -46,9 +45,6 @@ export const Toolbar: React.FC = () => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setShowRecent(false);
-      }
-      if (themeRef.current && !themeRef.current.contains(event.target as Node)) {
-        setShowThemes(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -93,6 +89,12 @@ export const Toolbar: React.FC = () => {
     await fileService.exportToPdf(html);
   };
 
+  const handleExportHtml = async () => {
+    if (!markdownContent) return;
+    const html = md.render(markdownContent);
+    await fileService.exportToHtml(html);
+  };
+
   return (
     <div className="h-12 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 draggable">
       <div className="flex items-center space-x-2 no-drag">
@@ -135,6 +137,9 @@ export const Toolbar: React.FC = () => {
         <button onClick={handleExportPdf} disabled={!markdownContent} className="btn-toolbar disabled:opacity-50" title="Export to PDF">
           <FileDown size={18} />
         </button>
+        <button onClick={handleExportHtml} disabled={!markdownContent} className="btn-toolbar disabled:opacity-50" title="Export to HTML">
+          <FileCode size={18} />
+        </button>
         <button onClick={saveAs} disabled={!markdownContent} className="btn-toolbar disabled:opacity-50" title="Save As">
           <FilePlus size={18} />
         </button>
@@ -144,55 +149,34 @@ export const Toolbar: React.FC = () => {
       </div>
 
       <div className="flex items-center space-x-2 no-drag">
-        <div className="relative" ref={themeRef}>
-          <button 
-            onClick={() => setShowThemes(!showThemes)} 
-            className="btn-toolbar" 
-            title="Change Theme"
-          >
-            <Palette size={18} />
+        <button onClick={togglePluginsModal} className="btn-toolbar" title="Plugins">
+          <Package size={18} />
+        </button>
+        {isEditing && (
+          <button onClick={toggleSplitDirection} className="btn-toolbar" title={splitDirection === 'vertical' ? "Split Horizontally" : "Split Vertically"}>
+            {splitDirection === 'vertical' ? <Rows size={18} /> : <ColumnsIcon size={18} />}
           </button>
-          {showThemes && (
-            <div className="absolute top-full right-0 mt-1 w-40 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50 py-1">
-              <div className="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700 mb-1">
-                Editor Theme
-              </div>
-              {[
-                { id: 'light', name: 'GitHub Light' },
-                { id: 'vs-dark', name: 'GitHub Dark' },
-                { id: 'dracula', name: 'Dracula' },
-                { id: 'nord', name: 'Nord' }
-              ].map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => { setTheme(t.id); setShowThemes(false); }}
-                  className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 ${theme === t.id ? 'text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-700 dark:text-gray-200'}`}
-                >
-                  {t.name}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
+        )}
         {isEditing && (
           <button onClick={triggerFind} className="btn-toolbar" title="Find & Replace">
             <Search size={18} />
           </button>
         )}
+        {isEditing && (
+          <button onClick={formatCurrentFile} className="btn-toolbar" title="Format Document">
+            <Sparkles size={18} />
+          </button>
+        )}
+        <button onClick={toggleWordWrap} className={`btn-toolbar ${wordWrap ? 'text-blue-600 dark:text-blue-400' : ''}`} title="Toggle Word Wrap">
+          <WrapText size={18} />
+        </button>
         <button onClick={togglePresentationMode} className="btn-toolbar" title="Presentation Mode">
           <Projector size={18} />
         </button>
-        <button onClick={toggleVimMode} className={`btn-toolbar ${isVimMode ? 'text-blue-600 dark:text-blue-400' : ''}`} title={isVimMode ? "Disable Vim Mode" : "Enable Vim Mode (Check Status Bar)"}>
-          <Keyboard size={18} />
-        </button>
-        <button onClick={toggleDistractionFreeMode} className={`btn-toolbar ${isDistractionFreeMode ? 'text-blue-600 dark:text-blue-400' : ''}`} title={isDistractionFreeMode ? "Exit Distraction Free Mode" : "Distraction Free Mode"}>
+        <button onClick={toggleDistractionFreeMode} className={`btn-toolbar ${isDistractionFreeMode ? 'text-blue-600 dark:text-blue-400' : ''}`} title={isDistractionFreeMode ? "Exit Distraction Free Mode" : "Distraction Free Mode (Hides All Chrome)"}>
           <Scan size={18} />
         </button>
-        <button onClick={toggleTypewriterMode} className={`btn-toolbar ${isTypewriterMode ? 'text-blue-600 dark:text-blue-400' : ''}`} title={isTypewriterMode ? "Disable Typewriter Mode" : "Enable Typewriter Mode"}>
-          <AlignVerticalJustifyCenter size={18} />
-        </button>
-        <button onClick={toggleZenMode} className="btn-toolbar" title={isZenMode ? "Exit Zen Mode" : "Enter Zen Mode"}>
+        <button onClick={toggleZenMode} className="btn-toolbar" title={isZenMode ? "Exit Zen Mode" : "Enter Zen Mode (Hides Sidebar)"}>
           {isZenMode ? <Minimize size={18} /> : <Maximize size={18} />}
         </button>
         <button onClick={toggleEditMode} className="btn-toolbar" title={isEditing ? "Switch to Preview" : "Switch to Edit"}>
@@ -204,6 +188,10 @@ export const Toolbar: React.FC = () => {
 
         <button onClick={toggleDarkMode} className="btn-toolbar">
           {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
+        
+        <button onClick={toggleSettings} className="btn-toolbar" title="Settings">
+          <Settings size={18} />
         </button>
       </div>
     </div>

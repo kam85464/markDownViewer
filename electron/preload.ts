@@ -9,4 +9,5 @@ contextBridge.exposeInMainWorld('electron', {
   getRecentFolders: () => ipcRenderer.invoke('get-recent-folders'),
   showConfirmDialog: (options: any) => ipcRenderer.invoke('show-confirm-dialog', options),
   exportToPdf: (htmlContent: string) => ipcRenderer.invoke('export-pdf', htmlContent),
+  exportToHtml: (htmlContent: string) => ipcRenderer.invoke('export-html', htmlContent),
 })

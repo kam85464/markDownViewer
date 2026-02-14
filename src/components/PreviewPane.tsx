@@ -1,14 +1,18 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import md from '../services/markdownService';
+import { createMarkdownParser } from '../services/markdownService';
 import mermaid from 'mermaid';
 import 'katex/dist/katex.min.css';
 import 'highlight.js/styles/github-dark.css';
 
 export const PreviewPane: React.FC = () => {
-  const { markdownContent } = useAppStore();
-  const containerRef = useRef<HTMLDivElement>(null);
+  const { markdownContent, plugins, isSyncScroll } = useAppStore();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Re-create the markdown parser whenever the plugins list changes
+  const md = useMemo(() => createMarkdownParser(plugins), [plugins]);
 
   useEffect(() => {
     try {
@@ -22,14 +26,14 @@ export const PreviewPane: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (containerRef.current) {
+    if (contentRef.current) {
       try {
         setError(null);
         // 1. Render Markdown
-        containerRef.current.innerHTML = md.render(markdownContent || '');
+        contentRef.current.innerHTML = md.render(markdownContent || '');
 
-        // 2. Render Mermaid Diagrams
-        const mermaidNodes = containerRef.current.querySelectorAll('.mermaid');
+        // 2. Render Mermaid Diagrams (only if the plugin is enabled and nodes exist)
+        const mermaidNodes = contentRef.current.querySelectorAll('.mermaid');
         if (mermaidNodes.length > 0) {
           mermaid.run({
             nodes: mermaidNodes,
@@ -40,16 +44,28 @@ export const PreviewPane: React.FC = () => {
         setError("Failed to render markdown content.");
       }
     }
-  }, [markdownContent]);
+  }, [markdownContent, md]); // Re-render when content OR parser changes
+
+  useEffect(() => {
+    const handleScrollSync = (e: Event) => {
+      if (!isSyncScroll || !scrollRef.current) return;
+      const customEvent = e as CustomEvent;
+      const percentage = customEvent.detail;
+      scrollRef.current.scrollTop = percentage * (scrollRef.current.scrollHeight - scrollRef.current.clientHeight);
+    };
+
+    window.addEventListener('editor-scroll', handleScrollSync);
+    return () => window.removeEventListener('editor-scroll', handleScrollSync);
+  }, [isSyncScroll]);
 
   if (error) {
     return <div className="h-full w-full p-8 text-red-500 bg-white dark:bg-gray-900">{error}</div>;
   }
 
   return (
-    <div className="h-full w-full overflow-y-auto bg-white dark:bg-gray-900 p-8">
+    <div ref={scrollRef} className="h-full w-full overflow-y-auto bg-white dark:bg-gray-900 p-8">
       <div 
-        ref={containerRef}
+        ref={contentRef}
         className="prose dark:prose-invert max-w-none 
                    prose-pre:bg-gray-100 dark:prose-pre:bg-gray-800
                    prose-img:rounded-lg prose-headings:border-b prose-headings:border-gray-200 dark:prose-headings:border-gray-700 prose-headings:pb-2"
