@@ -235,7 +235,7 @@ export const Sidebar: React.FC = () => {
   };
 
   return (
-    <div className="w-64 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 h-full overflow-y-auto flex flex-col">
+    <div id="app-sidebar" className="w-64 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 h-full overflow-y-auto flex flex-col">
       {isGithub && (
         <div className="flex border-b border-gray-200 dark:border-gray-700">
             <button 

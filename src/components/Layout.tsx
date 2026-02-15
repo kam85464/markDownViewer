@@ -44,7 +44,7 @@ export const Layout: React.FC = () => {
       <div className="flex flex-1 overflow-hidden">
 
         {!isDistractionFreeMode && <Sidebar />}
-        <main className="flex-1 flex flex-col overflow-hidden relative"> 
+        <main id="app-main-content" className="flex-1 flex flex-col overflow-hidden relative"> 
           {!isDistractionFreeMode && <Tabs />}
           <div className={`flex-1 flex overflow-hidden relative ${splitDirection === 'horizontal' ? 'flex-col' : 'flex-row'}`}>
             {isEditing && (
