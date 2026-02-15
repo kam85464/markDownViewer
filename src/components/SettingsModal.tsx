@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { X, Settings, Check, Keyboard, Map, Link2, AlignVerticalJustifyCenter, Palette, Save, RotateCcw, HelpCircle, FileJson, Type, Download, Eye, Package, CheckCircle, Circle, Target, Aperture } from 'lucide-react';
+import { X, Settings, Check, Keyboard, Map, Link2, AlignVerticalJustifyCenter, Palette, Save, RotateCcw, HelpCircle, FileJson, Type, Download, Eye, Package, CheckCircle, Circle, Target, Aperture, Clock, List } from 'lucide-react';
 
 // Load style presets from src/styles directory
 const stylePresets = import.meta.glob('@/styles/*.css', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
@@ -67,7 +67,11 @@ export const SettingsModal: React.FC = () => {
     isFocusMode,
     toggleFocusMode,
     fontSize,
-    setFontSize
+    setFontSize,
+    showRecentInSidebar,
+    toggleShowRecentInSidebar,
+    recentFilesLimit,
+    setRecentFilesLimit
   } = useAppStore();
 
   const [previewStyle, setPreviewStyle] = useState<{ name: string, content: string } | null>(null);
@@ -197,6 +201,29 @@ export const SettingsModal: React.FC = () => {
                   />
                 </div>
                 <ToggleItem label="Minimap" icon={Map} value={showMinimap} onChange={toggleMinimap} />
+                <ToggleItem label="Recent Files" icon={Clock} value={showRecentInSidebar} onChange={toggleShowRecentInSidebar} description="Show recently opened files in the sidebar" />
+                {showRecentInSidebar && (
+                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-100 dark:border-gray-700 mb-2 ml-8">
+                    <div className="flex items-center">
+                      <div className="p-2 bg-white dark:bg-gray-800 rounded-md mr-3 text-gray-500 dark:text-gray-400">
+                        <List size={18} />
+                      </div>
+                      <div>
+                        <div className="font-medium text-gray-900 dark:text-gray-100 text-sm">Recent Files Limit</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">{recentFilesLimit} files</div>
+                      </div>
+                    </div>
+                    <input
+                      type="range"
+                      min="5"
+                      max="50"
+                      step="5"
+                      value={recentFilesLimit}
+                      onChange={(e) => setRecentFilesLimit(parseInt(e.target.value))}
+                      className="w-32 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-blue-600"
+                    />
+                  </div>
+                )}
                 <ToggleItem label="Typewriter Mode" icon={AlignVerticalJustifyCenter} value={isTypewriterMode} onChange={toggleTypewriterMode} description="Keeps the cursor centered vertically" />
                 <ToggleItem label="Auto-Save" icon={Save} value={autoSaveEnabled} onChange={toggleAutoSave} description="Automatically save changes after 2 seconds of inactivity" />
               </div>

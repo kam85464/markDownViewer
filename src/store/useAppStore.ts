@@ -36,6 +36,8 @@ interface AppState {
   customCSS: string;
   fontSize: number;
   wordCountGoal: number;
+  showRecentInSidebar: boolean;
+  recentFilesLimit: number;
   
   setFolder: (folder: string) => void;
   setFiles: (files: FileItem[]) => void;
@@ -77,6 +79,8 @@ interface AppState {
   setFontSize: (size: number) => void;
   openSettingsFile: () => Promise<void>;
   setWordCountGoal: (goal: number) => void;
+  toggleShowRecentInSidebar: () => void;
+  setRecentFilesLimit: (limit: number) => void;
   
 }
 
@@ -119,6 +123,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   customCSS: settingsService.get('customCSS'),
   fontSize: settingsService.get('fontSize'),
   wordCountGoal: (settingsService.get('wordCountGoal' as any) as number) || 0,
+  showRecentInSidebar: settingsService.get('showRecentInSidebar' as any) ?? true,
+  recentFilesLimit: (settingsService.get('recentFilesLimit' as any) as number) || 10,
 
   setFolder: (folder) => set({ currentFolder: folder }),
   setFiles: (files) => set({ files }),
@@ -439,5 +445,16 @@ export const useAppStore = create<AppState>((set, get) => ({
   setWordCountGoal: (goal) => {
     settingsService.set('wordCountGoal' as any, goal);
     set({ wordCountGoal: goal });
+  },
+
+  toggleShowRecentInSidebar: () => set((state) => {
+    const newValue = !state.showRecentInSidebar;
+    settingsService.set('showRecentInSidebar' as any, newValue);
+    return { showRecentInSidebar: newValue };
+  }),
+
+  setRecentFilesLimit: (limit) => {
+    settingsService.set('recentFilesLimit' as any, limit);
+    set({ recentFilesLimit: limit });
   },
 }));

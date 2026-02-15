@@ -91,6 +91,16 @@ export const PreviewPane: React.FC = () => {
                 }, 2000);
              });
           });
+
+          // 5. Open external links in new tab
+          const links = ref.querySelectorAll('a');
+          links.forEach(link => {
+             const href = link.getAttribute('href');
+             if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
+                 link.setAttribute('target', '_blank');
+                 link.setAttribute('rel', 'noopener noreferrer');
+             }
+          });
         } catch (e) {
           console.error("Markdown render error:", e);
           setError("Failed to render markdown content.");

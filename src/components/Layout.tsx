@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Save, X, FileText, FolderOpen, Clock, Trash2, FilePlus, Pin, PinOff, FolderSearch, BookOpen, Lightbulb, FileCode, PenTool, BookOpenText, Scroll, Apple, AppWindow, Cpu, Car, Smartphone, Gamepad2, Watch, Headphones } from 'lucide-react';
+import { Save, X, FileText, FolderOpen, Clock, Trash2, FilePlus, Pin, PinOff, FolderSearch, BookOpen, Lightbulb, FileCode, PenTool, BookOpenText, Scroll, Apple, AppWindow, Cpu, Car, Smartphone, Gamepad2, Watch, Headphones, Github, Loader, ArrowRight, LayoutTemplate } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { Toolbar } from './Toolbar';
 import { Tabs } from './Tabs';
@@ -12,6 +12,7 @@ import { EditorPane } from './EditorPane';
 import { PreviewPane } from './PreviewPane';
 import { SettingsModal } from './SettingsModal';
 import { fileService } from '../services/fileService';
+import { githubService } from '../services/githubService';
 
 
 const TIPS = [
@@ -183,7 +184,9 @@ export const Layout: React.FC = () => {
     selectFile,
     setMarkdownContent,
     isFocusMode,
-    isTyping
+    isTyping,
+    files,
+    currentFolder
   } = useAppStore();
 
   const [showDisclaimer, setShowDisclaimer] = useState(() => {
@@ -200,6 +203,9 @@ export const Layout: React.FC = () => {
   const menuRef = useRef<HTMLDivElement>(null);
   const [dailyTip, setDailyTip] = useState("");
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+  const [githubUrl, setGithubUrl] = useState("");
+  const [isLoadingGithub, setIsLoadingGithub] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
 
   useEffect(() => {
     setDailyTip(TIPS[Math.floor(Math.random() * TIPS.length)]);
@@ -278,6 +284,12 @@ export const Layout: React.FC = () => {
     selectFile({ name: 'Untitled', path: '', parent: '' });
   };
 
+  const handleTemplateSelect = (template: typeof TEMPLATES[0]) => {
+    setMarkdownContent(template.content);
+    selectFile({ name: template.filename, path: `untitled:${template.filename}`, parent: '' });
+    setShowTemplates(false);
+  };
+
   const handleQuickStart = async () => {
     const content = `# Quick Start Guide
 
@@ -307,6 +319,31 @@ Enjoy writing!
 `;
     await selectFile({ name: 'Quick Start.md', path: 'untitled:Quick Start.md', parent: '' });
     setMarkdownContent(content);
+  };
+
+  const handleLoadFromGithubHome = async () => {
+    if (!githubUrl) return;
+    setIsLoadingGithub(true);
+    setFiles(null as any);
+    try {
+      const result = await githubService.loadFromUrl(githubUrl);
+      if (result.type === 'file' && result.content) {
+        setMarkdownContent(result.content);
+        selectFile({
+            name: githubUrl.split('/').pop() || 'github-file.md',
+            path: githubUrl,
+            isGithub: true
+        });
+      } else if (result.type === 'dir' && result.files) {
+        setFiles(result.files as any);
+        setFolder(githubUrl);
+      }
+    } catch (error) {
+      console.error("GitHub load error:", error);
+      alert("Failed to load from GitHub. Check console for details.");
+    } finally {
+      setIsLoadingGithub(false);
+    }
   };
 
   const handleContextMenu = (e: React.MouseEvent, path: string) => {
@@ -374,6 +411,10 @@ Enjoy writing!
 
   const dimClass = isFocusMode && isTyping ? 'opacity-10 transition-opacity duration-500 delay-100' : 'opacity-100 transition-opacity duration-200';
 
+  const showEditor = isEditing && !!currentFile;
+  const showSidebar = !isDistractionFreeMode && isSidebarVisible && (!!currentFolder || (!!files && files.length > 0));
+  const showTOCPanel = showTOC && !isDistractionFreeMode && !!currentFile;
+
   return (
     <div className="flex flex-col h-screen bg-[#fcfcfc] dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       {/* {isPresentationMode && <Presentation />} */}
@@ -383,19 +424,19 @@ Enjoy writing!
       </div>
       <div className="flex flex-1 overflow-hidden">
 
-        {!isDistractionFreeMode && isSidebarVisible && <div className={`${dimClass} animate-in slide-in-from-left duration-300`}><Sidebar /></div>}
+        {showSidebar && <div className={`${dimClass} animate-in slide-in-from-left duration-300`}><Sidebar /></div>}
         <main id="app-main-content" className="flex-1 flex flex-col overflow-hidden relative"> 
           {!isDistractionFreeMode && <div className={`${dimClass} animate-in slide-in-from-top duration-300`}><Tabs /></div>}
           <div className="flex flex-1 overflow-hidden relative">
           <div className={`flex-1 flex overflow-hidden relative ${splitDirection === 'horizontal' ? 'flex-col' : 'flex-row'}`}>
-            {isEditing && (
+            {showEditor && (
             <div className={`${splitDirection === 'horizontal' ? 'h-1/2 w-full border-b' : 'w-1/2 h-full border-r'} border-gray-200 dark:border-gray-700`}>
               <ErrorBoundary name="Editor">
                 <EditorPane />
               </ErrorBoundary>
             </div>
           )}
-            <div className={`${isEditing ? (splitDirection === 'horizontal' ? 'h-1/2 w-full' : 'w-1/2 h-full') : 'w-full h-full'} relative ${dimClass}`}>
+            <div className={`${showEditor ? (splitDirection === 'horizontal' ? 'h-1/2 w-full' : 'w-1/2 h-full') : 'w-full h-full'} relative ${dimClass}`}>
               <ErrorBoundary name="Preview">
                 <PreviewPane />
               </ErrorBoundary>
@@ -482,8 +523,41 @@ Enjoy writing!
                             <BookOpen size={22} className="group-hover:text-blue-500 transition-colors" />
                             <span>Quick Start</span>
                           </div>
+                         </button>
+                         <button 
+                           onClick={() => setShowTemplates(true)}
+                           className="group px-8 py-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 rounded-2xl font-semibold text-lg shadow-lg shadow-gray-200/50 dark:shadow-none hover:shadow-xl hover:border-blue-500/50 dark:hover:border-blue-500/50 transition-all duration-300 hover:-translate-y-1"
+                         >
+                           <div className="flex items-center gap-3">
+                             <LayoutTemplate size={22} className="group-hover:text-blue-500 transition-colors" />
+                             <span>From Template</span>
+                           </div>
                         </button>
                       </div>
+
+                      <div className="w-full max-w-lg mb-12 relative group animate-in fade-in slide-in-from-bottom-4 duration-700 delay-75">
+                          <div className="absolute -inset-1 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 rounded-xl blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
+                          <div className="relative flex items-center bg-white dark:bg-gray-800 rounded-xl p-2 shadow-lg border border-gray-100 dark:border-gray-700">
+                            <div className="p-2 text-gray-400">
+                              <Github size={20} />
+                            </div>
+                            <input 
+                              type="text" 
+                              placeholder="Paste GitHub repository or file URL..." 
+                              className="flex-1 bg-transparent border-none focus:outline-none text-sm text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 px-2"
+                              value={githubUrl}
+                              onChange={(e) => setGithubUrl(e.target.value)}
+                              onKeyDown={(e) => e.key === 'Enter' && handleLoadFromGithubHome()}
+                            />
+                            <button 
+                              onClick={handleLoadFromGithubHome}
+                              disabled={!githubUrl || isLoadingGithub}
+                              className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                              {isLoadingGithub ? <Loader size={18} className="animate-spin" /> : <ArrowRight size={18} />}
+                            </button>
+                          </div>
+                       </div>
 
                       {recentFolders.length > 0 && (
                         <div className="w-full max-w-md animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
@@ -570,7 +644,7 @@ Enjoy writing!
               </div>
             </div>
           </div>
-          {showTOC && !isDistractionFreeMode && <div className={`${dimClass} h-full animate-in slide-in-from-right duration-300`}><TableOfContents /></div>}
+          {showTOCPanel && <div className={`${dimClass} h-full animate-in slide-in-from-right duration-300`}><TableOfContents /></div>}
           </div>
         </main>
       </div>
