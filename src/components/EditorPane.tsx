@@ -5,12 +5,13 @@ import { dracula, nord } from '../utils/themes';
 import { initVimMode } from 'monaco-vim';
 
 export const EditorPane: React.FC = () => {
-  const { markdownContent, setMarkdownContent, theme, setCursorPosition, findTrigger, isVimMode, isTypewriterMode, isSyncScroll, showMinimap, wordWrap, customCSS } = useAppStore();
+  const { markdownContent, setMarkdownContent, theme, setCursorPosition, findTrigger, isVimMode, isTypewriterMode, isSyncScroll, showMinimap, wordWrap, customCSS, isFocusMode, setIsTyping } = useAppStore();
   const editorRef = useRef<any>(null);
   const vimModeRef = useRef<any>(null);
   const isTypewriterModeRef = useRef(isTypewriterMode);
   const isSyncScrollRef = useRef(isSyncScroll);
   const isScrollingFromPreview = useRef(false);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleEditorDidMount: OnMount = (editor) => {
     editorRef.current = editor;
@@ -105,6 +106,17 @@ export const EditorPane: React.FC = () => {
     return () => window.removeEventListener('preview-scroll', handlePreviewScroll);
   }, [isSyncScroll]);
 
+  const handleEditorChange = (value: string | undefined) => {
+    setMarkdownContent(value || '');
+    if (isFocusMode) {
+      setIsTyping(true);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = setTimeout(() => {
+        setIsTyping(false);
+      }, 1000);
+    }
+  };
+
   return (
     <div className="h-full w-full overflow-hidden">
       {customCSS && <style>{customCSS}</style>}
@@ -113,7 +125,7 @@ export const EditorPane: React.FC = () => {
         language="markdown"
         theme={theme}
         value={markdownContent}
-        onChange={(value) => setMarkdownContent(value || '')}
+        onChange={handleEditorChange}
         onMount={handleEditorDidMount}
         beforeMount={handleBeforeMount}
         options={{

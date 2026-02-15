@@ -3,7 +3,7 @@ import { useAppStore } from '../store/useAppStore';
 import { fileService } from '../services/fileService';
 import md from '../services/markdownService';
 import { githubService } from '../services/githubService';
-import { FolderOpen, Save, Moon, Sun, Columns, Eye, FolderX, ChevronDown, FileDown, FilePlus, Search, Maximize, Minimize, Projector, Scan, FileCode, Rows, Columns as ColumnsIcon, Settings, WrapText, Sparkles, ScanEye, Scale3DIcon, NotebookPenIcon, BookAIcon, Github, Loader, HelpCircle } from 'lucide-react';
+import { FolderOpen, Save, Moon, Sun, Columns, Eye, FolderX, ChevronDown, FileDown, FilePlus, Search, Maximize, Minimize, Projector, Scan, FileCode, Rows, Columns as ColumnsIcon, Settings, WrapText, Sparkles, ScanEye, Scale3DIcon, NotebookPenIcon, BookAIcon, Github, Loader, HelpCircle, Aperture } from 'lucide-react';
 
 // Helper component for toolbar buttons with conditional labels
 const ToolbarButton: React.FC<{
@@ -36,8 +36,8 @@ const ToolbarButton: React.FC<{
 );
 
 const FeatureListModal: React.FC<{ onClose: () => void }> = ({ onClose }) => (
-  <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full max-h-[80vh] overflow-y-auto">
+  <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center animate-in fade-in duration-200">
+    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full max-h-[80vh] overflow-y-auto animate-in zoom-in-95 duration-200">
       <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Features & User Manual</h2>
       <ul className="list-disc pl-5 space-y-2 text-gray-700 dark:text-gray-300 text-sm">
         <li><strong>File Explorer:</strong> Open local folders or load GitHub repositories directly via URL.</li>
@@ -88,7 +88,7 @@ const TourOverlay: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   }, [step]);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center animate-in fade-in duration-200">
        {rect ? (
          <div 
            className="fixed z-40 transition-all duration-300 ease-in-out border-2 border-blue-500 rounded shadow-[0_0_0_9999px_rgba(0,0,0,0.5)] pointer-events-none"
@@ -101,7 +101,7 @@ const TourOverlay: React.FC<{ onClose: () => void }> = ({ onClose }) => {
          />
        ) : null}
 
-       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full z-50 relative">
+       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full z-50 relative animate-in zoom-in-95 duration-200">
          <h3 className="text-lg font-bold mb-2 text-gray-900 dark:text-white">{steps[step].title} ({step + 1}/{steps.length})</h3>
          <p className="text-gray-700 dark:text-gray-300 mb-6 text-sm">{steps[step].content}</p>
          <div className="flex justify-between">
@@ -143,6 +143,8 @@ export const Toolbar: React.FC = () => {
     triggerFind,
     isDistractionFreeMode,
     toggleDistractionFreeMode,
+    isFocusMode,
+    toggleFocusMode,
     toggleSplitDirection,
     toggleSettings,
     wordWrap,
@@ -319,6 +321,7 @@ export const Toolbar: React.FC = () => {
         {isEditing && (
           <ToolbarButton icon={<Sparkles size={18} />} label="Format" onClick={formatCurrentFile} showLabel={isEditing} title="Format Document" />
         )}
+        <ToolbarButton icon={<Aperture size={18} />} label="Focus" onClick={toggleFocusMode} showLabel={isEditing} title="Focus Mode (Dims UI when typing)" highlight={isFocusMode} />
         <ToolbarButton icon={<Scan size={18} />} label="Zen Mode" onClick={toggleDistractionFreeMode} showLabel={isEditing} title="Zen Mode"  />
           {isEditing ? <Eye size={18} /> : <Columns size={18} />}
         <ToolbarButton icon={<Scan size={18} />} label="Distraction Free" onClick={toggleDistractionFreeMode} showLabel={isEditing} title="Distraction Free Mode"  />

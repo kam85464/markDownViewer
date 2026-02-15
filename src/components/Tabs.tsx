@@ -104,7 +104,7 @@ export const Tabs: React.FC = () => {
           onDragEnd={onDragEnd}
           onContextMenu={(e) => handleContextMenu(e, file)}
           className={`
-            group flex items-center min-w-[120px] max-w-[200px] h-9 px-3 text-xs border-r border-gray-200 dark:border-gray-700 cursor-pointer select-none
+            group flex items-center min-w-[120px] max-w-[200px] h-9 px-3 text-xs border-r border-gray-200 dark:border-gray-700 cursor-pointer select-none transition-colors duration-200
             ${currentFile?.path === file.path 
               ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 border-t-2 border-t-blue-600 dark:border-t-blue-400' 
               : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}

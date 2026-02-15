@@ -22,6 +22,8 @@ interface AppState {
   isTypewriterMode: boolean;
   autoSaveEnabled: boolean;
   isVimMode: boolean;
+  isFocusMode: boolean;
+  isTyping: boolean;
   theme: string;
   showPlugins: boolean;
   plugins: Plugin[];
@@ -57,6 +59,8 @@ interface AppState {
   toggleTypewriterMode: () => void;
   toggleAutoSave: () => void;
   toggleVimMode: () => void;
+  toggleFocusMode: () => void;
+  setIsTyping: (isTyping: boolean) => void;
   togglePluginsModal: () => void;
   enablePlugin: (id: string) => void;
   disablePlugin: (id: string) => void;
@@ -93,6 +97,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   isTypewriterMode: false,
   autoSaveEnabled: settingsService.get('autoSaveEnabled'),
   isVimMode: false,
+  isFocusMode: false,
+  isTyping: false,
   theme: 'vs-dark',
   showPlugins: false,
   plugins: [
@@ -372,6 +378,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   }),
 
   toggleVimMode: () => set((state) => ({ isVimMode: !state.isVimMode })),
+
+  toggleFocusMode: () => set((state) => ({ isFocusMode: !state.isFocusMode })),
+
+  setIsTyping: (isTyping) => set({ isTyping }),
 
   togglePluginsModal: () => set((state) => ({ showPlugins: !state.showPlugins })),
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Save, X, FileText, FolderOpen, Clock, Trash2, FilePlus, Pin, PinOff, FolderSearch } from 'lucide-react';
+import { Save, X, FileText, FolderOpen, Clock, Trash2, FilePlus, Pin, PinOff, FolderSearch, BookOpen, Lightbulb } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { Toolbar } from './Toolbar';
 import { Tabs } from './Tabs';
@@ -13,6 +13,17 @@ import { PreviewPane } from './PreviewPane';
 import { SettingsModal } from './SettingsModal';
 import { fileService } from '../services/fileService';
 
+
+const TIPS = [
+  "Tip: Drag and drop folders to open them instantly.",
+  "Tip: Use Ctrl+P (Cmd+P) to quickly search for files.",
+  "Tip: Enable Vim Mode in settings for keyboard-driven editing.",
+  "Tip: Right-click tabs to access more options like 'Close Others'.",
+  "Quote: \"Simplicity is the soul of efficiency.\" – Austin Freeman",
+  "Quote: \"Code is like humor. When you have to explain it, it’s bad.\" – Cory House",
+  "Tip: You can export your markdown to PDF or HTML from the toolbar.",
+  "Tip: Toggle Zen Mode to remove distractions."
+];
 
 const ParticleBackground: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -140,7 +151,9 @@ export const Layout: React.FC = () => {
     loadRecentFolders,
     recentFolders,
     selectFile,
-    setMarkdownContent
+    setMarkdownContent,
+    isFocusMode,
+    isTyping
   } = useAppStore();
 
   const [showDisclaimer, setShowDisclaimer] = useState(() => {
@@ -155,6 +168,11 @@ export const Layout: React.FC = () => {
   });
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; path: string } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [dailyTip, setDailyTip] = useState("");
+
+  useEffect(() => {
+    setDailyTip(TIPS[Math.floor(Math.random() * TIPS.length)]);
+  }, []);
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -204,6 +222,32 @@ export const Layout: React.FC = () => {
   const handleNewFile = () => {
     setMarkdownContent('');
     selectFile({ name: 'Untitled', path: '', content: '' });
+  };
+
+  const handleQuickStart = async () => {
+    const content = `# Quick Start Guide
+
+Welcome to **Markdown Viewer Pro**!
+
+## 🚀 Getting Started
+
+1. **Open a Folder**: Click the folder icon in the toolbar or drag a folder into the window.
+2. **Create a File**: Click the "New File" button or use the context menu in the file explorer.
+3. **Edit**: Just start typing! The preview updates automatically.
+
+## ⌨️ Key Shortcuts
+
+| Action | Shortcut |
+|--------|----------|
+| Save | \`Ctrl/Cmd + S\` |
+| Find File | \`Ctrl/Cmd + P\` |
+| Command Palette | \`F1\` |
+| Toggle Sidebar | \`Ctrl/Cmd + B\` |
+
+Enjoy writing!
+`;
+    await selectFile({ name: 'Quick Start.md', path: 'untitled:Quick Start.md', parent: '', isDirectory: false });
+    setMarkdownContent(content);
   };
 
   const handleContextMenu = (e: React.MouseEvent, path: string) => {
@@ -269,16 +313,20 @@ export const Layout: React.FC = () => {
     return isAPinned ? -1 : 1;
   });
 
+  const dimClass = isFocusMode && isTyping ? 'opacity-10 transition-opacity duration-500 delay-100' : 'opacity-100 transition-opacity duration-200';
+
   return (
     <div className="flex flex-col h-screen bg-[#fcfcfc] dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       {/* {isPresentationMode && <Presentation />} */}
       <SettingsModal />
-      <Toolbar />
+      <div className={dimClass}>
+        <Toolbar />
+      </div>
       <div className="flex flex-1 overflow-hidden">
 
-        {!isDistractionFreeMode && <Sidebar />}
+        {!isDistractionFreeMode && <div className={dimClass}><Sidebar /></div>}
         <main id="app-main-content" className="flex-1 flex flex-col overflow-hidden relative"> 
-          {!isDistractionFreeMode && <Tabs />}
+          {!isDistractionFreeMode && <div className={dimClass}><Tabs /></div>}
           <div className={`flex-1 flex overflow-hidden relative ${splitDirection === 'horizontal' ? 'flex-col' : 'flex-row'}`}>
             {isEditing && (
             <div className={`${splitDirection === 'horizontal' ? 'h-1/2 w-full border-b' : 'w-1/2 h-full border-r'} border-gray-200 dark:border-gray-700`}>
@@ -287,111 +335,142 @@ export const Layout: React.FC = () => {
               </ErrorBoundary>
             </div>
           )}
-            <div className={`${isEditing ? (splitDirection === 'horizontal' ? 'h-1/2 w-full' : 'w-1/2 h-full') : 'w-full h-full'} relative`}>
+            <div className={`${isEditing ? (splitDirection === 'horizontal' ? 'h-1/2 w-full' : 'w-1/2 h-full') : 'w-full h-full'} relative ${dimClass}`}>
               <ErrorBoundary name="Preview">
                 <PreviewPane />
               </ErrorBoundary>
               <div 
-                className={`absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-500 ${currentFile ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'} bg-[#fcfcfc]/50 dark:bg-gray-900/50 backdrop-blur-sm z-10`}
+                className={`absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-500 ${currentFile ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'} bg-gradient-to-br from-[#fcfcfc]/90 via-[#f1f5f9]/90 to-[#e2e8f0]/90 dark:from-gray-900/90 dark:via-gray-800/90 dark:to-gray-900/90 backdrop-blur-md z-10`}
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
               >
                   <ParticleBackground />
-                  <div className="relative group cursor-default" style={{ perspective: '1000px' }}>
-                    <div className="absolute -inset-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full opacity-20 group-hover:opacity-40 blur-2xl transition-opacity duration-500 animate-pulse"></div>
-                    <div className="relative transform transition-transform duration-700 group-hover:rotate-6 group-hover:scale-110">
-                       <FileText strokeWidth={1} size={140} className="text-gray-800 dark:text-gray-100 relative z-10 drop-shadow-2xl" />
-                       <FileText strokeWidth={1} size={140} className="text-blue-500/30 absolute top-2 left-2 z-0 blur-[2px]" />
-                    </div>
-                  </div>
-                  <h1 className="text-4xl font-bold mt-8 mb-3 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 tracking-tight">Markdown Viewer Pro</h1>
-                  <p className="text-gray-500 dark:text-gray-400 mb-8 text-lg">Visualize your ideas with power and simplicity</p>
                   
-                  <div className="flex gap-4">
-                    <button 
-                      onClick={handleOpenFolder}
-                      className="flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-full font-semibold text-lg transition-all shadow-lg hover:shadow-blue-500/40 hover:-translate-y-1 active:translate-y-0"
-                    >
-                      <FolderOpen size={24} />
-                      Open Folder
-                    </button>
-                    <button 
-                      onClick={handleNewFile}
-                      className="flex items-center gap-3 px-8 py-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-full font-semibold text-lg transition-all shadow-lg hover:shadow-gray-500/20 hover:-translate-y-1 active:translate-y-0"
-                    >
-                      <FilePlus size={24} />
-                      New File
-                    </button>
-                  </div>
-
-                  {recentFolders.length > 0 && (
-                    <div className="mt-12 w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200 z-10">
-                      <div className="flex items-center justify-between mb-3 px-1">
-                        <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Recent Folders</h3>
+                  <div className="z-20 flex flex-col items-center max-w-2xl w-full px-6 animate-in fade-in zoom-in-95 duration-500">
+                      <div className="relative group cursor-default mb-8" style={{ perspective: '1000px' }}>
+                        <div className="absolute -inset-10 bg-gradient-to-r from-blue-500/20 to-purple-600/20 rounded-full blur-3xl transition-opacity duration-500 opacity-0 group-hover:opacity-100 animate-pulse"></div>
+                        <div className="relative transform transition-all duration-700 group-hover:rotate-6 group-hover:scale-110">
+                           <FileText strokeWidth={1.5} size={120} className="text-gray-800 dark:text-gray-100 relative z-10 drop-shadow-2xl" />
+                           <FileText strokeWidth={1.5} size={120} className="text-blue-500/20 absolute top-3 left-3 z-0 blur-sm" />
+                        </div>
+                      </div>
+                      
+                      <h1 className="text-5xl font-extrabold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 tracking-tight text-center drop-shadow-sm">
+                        Markdown Viewer Pro
+                      </h1>
+                      <p className="text-gray-600 dark:text-gray-300 mb-12 text-xl text-center font-light max-w-lg leading-relaxed">
+                        Visualize your ideas with power, simplicity, and elegance.
+                      </p>
+                      
+                      <div className="flex gap-6 mb-16">
                         <button 
-                          onClick={handleClearRecent}
-                          className="text-gray-400 hover:text-red-500 transition-colors p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
-                          title="Clear Recent"
+                          onClick={handleOpenFolder}
+                          className="group relative px-8 py-4 bg-blue-600 text-white rounded-2xl font-semibold text-lg shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-all duration-300 hover:-translate-y-1 overflow-hidden"
                         >
-                          <Trash2 size={14} />
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                          <div className="flex items-center gap-3">
+                            <FolderOpen size={22} />
+                            <span>Open Folder</span>
+                          </div>
+                        </button>
+                        <button 
+                          onClick={handleNewFile}
+                          className="group px-8 py-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 rounded-2xl font-semibold text-lg shadow-lg shadow-gray-200/50 dark:shadow-none hover:shadow-xl hover:border-blue-500/50 dark:hover:border-blue-500/50 transition-all duration-300 hover:-translate-y-1"
+                        >
+                          <div className="flex items-center gap-3">
+                            <FilePlus size={22} className="group-hover:text-blue-500 transition-colors" />
+                            <span>New File</span>
+                          </div>
+                        </button>
+                        <button 
+                          onClick={handleQuickStart}
+                          className="group px-8 py-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 rounded-2xl font-semibold text-lg shadow-lg shadow-gray-200/50 dark:shadow-none hover:shadow-xl hover:border-blue-500/50 dark:hover:border-blue-500/50 transition-all duration-300 hover:-translate-y-1"
+                        >
+                          <div className="flex items-center gap-3">
+                            <BookOpen size={22} className="group-hover:text-blue-500 transition-colors" />
+                            <span>Quick Start</span>
+                          </div>
                         </button>
                       </div>
-                      <div className="bg-[#fcfcfc]/80 dark:bg-gray-800/80 backdrop-blur-md rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
-                        {sortedRecentFolders.slice(0, 5).map((folder, i) => (
-                          <button
-                            key={i}
-                            onClick={() => handleRecentClick(folder)}
-                            onContextMenu={(e) => handleContextMenu(e, folder)}
-                            className="w-full text-left px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 border-b border-gray-100 dark:border-gray-700/50 last:border-0 flex items-center transition-colors group"
-                          >
-                            {pinnedFolders.includes(folder) ? (
-                              <Pin size={14} className="mr-3 text-blue-500 fill-current" />
-                            ) : (
-                              <Clock size={14} className="mr-3 text-gray-400 group-hover:text-blue-500 transition-colors" />
-                            )}
-                            <span className="truncate opacity-80 group-hover:opacity-100 transition-opacity">{folder}</span>
-                          </button>
-                        ))}
+
+                      {recentFolders.length > 0 && (
+                        <div className="w-full max-w-md animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
+                          <div className="flex items-center justify-between mb-4 px-2">
+                            <h3 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Recent Workspaces</h3>
+                            <button 
+                              onClick={handleClearRecent}
+                              className="text-gray-400 hover:text-red-500 transition-colors p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20"
+                              title="Clear Recent"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                          <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 dark:border-gray-700/50 overflow-hidden ring-1 ring-black/5 dark:ring-white/5">
+                            {sortedRecentFolders.slice(0, 5).map((folder, i) => (
+                              <button
+                                key={i}
+                                onClick={() => handleRecentClick(folder)}
+                                onContextMenu={(e) => handleContextMenu(e, folder)}
+                                className="w-full text-left px-5 py-3.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-white/80 dark:hover:bg-gray-700/80 border-b border-gray-100/50 dark:border-gray-700/50 last:border-0 flex items-center transition-all group relative overflow-hidden"
+                              >
+                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                {pinnedFolders.includes(folder) ? (
+                                  <Pin size={16} className="mr-4 text-blue-500 fill-blue-500/20" />
+                                ) : (
+                                  <Clock size={16} className="mr-4 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                                )}
+                                <span className="truncate font-medium opacity-90 group-hover:opacity-100 transition-opacity">{folder}</span>
+                                <div className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity text-gray-400">
+                                    <FolderOpen size={14} />
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="mt-12 flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400 bg-white/40 dark:bg-gray-800/40 px-4 py-2 rounded-full backdrop-blur-sm border border-white/20 dark:border-gray-700/30 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-300">
+                        <Lightbulb size={16} className="text-yellow-500" />
+                        <span className="italic">{dailyTip}</span>
                       </div>
-                    </div>
-                  )}
+                  </div>
 
                   {contextMenu && (
                     <div 
                       ref={menuRef}
-                      className="fixed z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg py-1 min-w-[160px]"
+                      className="fixed z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl py-1 min-w-[180px] animate-in fade-in zoom-in-95 duration-100"
                       style={{ top: contextMenu.y, left: contextMenu.x }}
                     >
                       <button 
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
+                        className="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 flex items-center transition-colors"
                         onClick={() => {
                           handleRecentClick(contextMenu.path);
                           setContextMenu(null);
                         }}
                       >
-                        <FolderOpen size={14} className="mr-2" />
+                        <FolderOpen size={16} className="mr-3" />
                         Open
                       </button>
                       <button 
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
+                        className="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 flex items-center transition-colors"
                         onClick={() => handleRevealInExplorer(contextMenu.path)}
                       >
-                        <FolderSearch size={14} className="mr-2" />
+                        <FolderSearch size={16} className="mr-3" />
                         Reveal in Explorer
                       </button>
                       <button 
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
+                        className="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 flex items-center transition-colors"
                         onClick={() => handlePinToggle(contextMenu.path)}
                       >
-                        {pinnedFolders.includes(contextMenu.path) ? <PinOff size={14} className="mr-2" /> : <Pin size={14} className="mr-2" />}
+                        {pinnedFolders.includes(contextMenu.path) ? <PinOff size={16} className="mr-3" /> : <Pin size={16} className="mr-3" />}
                         {pinnedFolders.includes(contextMenu.path) ? "Unpin" : "Pin to Recent"}
                       </button>
-                      <div className="h-px bg-gray-100 dark:bg-gray-700 my-1" />
+                      <div className="h-px bg-gray-100 dark:bg-gray-700 my-1 mx-1" />
                       <button 
-                        className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
+                        className="w-full text-left px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center transition-colors"
                         onClick={() => handleRemoveRecent(contextMenu.path)}
                       >
-                        <Trash2 size={14} className="mr-2" />
+                        <Trash2 size={16} className="mr-3" />
                         Remove from Recent
                       </button>
                     </div>
@@ -402,7 +481,7 @@ export const Layout: React.FC = () => {
         </main>
       </div>
       
-      <div className="bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 px-3 py-0.5 text-[10px] text-gray-400 flex justify-between items-center">
+      <div className={`bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 px-3 py-0.5 text-[10px] text-gray-400 flex justify-between items-center ${dimClass}`}>
         {showDisclaimer ? (
           <div className="flex items-center gap-2">
             <span>Disclaimer: This application is provided "as is" without warranty.</span>
