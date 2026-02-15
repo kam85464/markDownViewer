@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { fileService } from '../services/fileService';
 import md from '../services/markdownService';
-import { FolderOpen, Save, Moon, Sun, Columns, Eye, FolderX, ChevronDown, FileDown, FilePlus, Search, Maximize, Minimize, Projector, Scan, FileCode, Rows, Columns as ColumnsIcon, Settings, WrapText, Sparkles, ScanEye, Scale3DIcon, NotebookPenIcon, BookAIcon, Github } from 'lucide-react';
+import { githubService } from '../services/githubService';
+import { FolderOpen, Save, Moon, Sun, Columns, Eye, FolderX, ChevronDown, FileDown, FilePlus, Search, Maximize, Minimize, Projector, Scan, FileCode, Rows, Columns as ColumnsIcon, Settings, WrapText, Sparkles, ScanEye, Scale3DIcon, NotebookPenIcon, BookAIcon, Github, Loader } from 'lucide-react';
 
 // Helper component for toolbar buttons with conditional labels
 const ToolbarButton: React.FC<{
@@ -60,10 +61,12 @@ export const Toolbar: React.FC = () => {
     currentFolder,
     currentFile,
     splitDirection,
-    formatCurrentFile
+    formatCurrentFile,
+    setMarkdownContent
   } = useAppStore();
 
   const [showRecent, setShowRecent] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -129,8 +132,21 @@ export const Toolbar: React.FC = () => {
   const handleLoadFromGithub = async () => {
     const url = window.prompt("Enter GitHub repository URL:");
     if (url) {
-      // TODO: Implement GitHub loading logic
-      console.log("Loading from GitHub:", url);
+      setIsLoading(true);
+      try {
+        const result = await githubService.loadFromUrl(url);
+        if (result.type === 'file' && result.content) {
+          setMarkdownContent(result.content);
+        } else if (result.type === 'dir' && result.files) {
+          setFiles(result.files as any);
+          setFolder(url);
+        }
+      } catch (error) {
+        console.error("GitHub load error:", error);
+        alert("Failed to load from GitHub. Check console for details.");
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -167,7 +183,7 @@ export const Toolbar: React.FC = () => {
             </div>
           )}
         </div>
-        <ToolbarButton icon={<Github size={18} />} onClick={handleLoadFromGithub} title="Load from GitHub" />
+        <ToolbarButton icon={isLoading ? <Loader size={18} className="animate-spin" /> : <Github size={18} />} onClick={handleLoadFromGithub} title="Load from GitHub" disabled={isLoading} />
 
         {currentFolder && (
           <button onClick={handleCloseFolder} className="btn-toolbar" title="Close Folder">
