@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { fileService } from '../services/fileService';
 import md from '../services/markdownService';
-import { FolderOpen, Save, Moon, Sun, Columns, Eye, FolderX, ChevronDown, FileDown, FilePlus, Search, Maximize, Minimize, Projector, Scan, FileCode, Rows, Columns as ColumnsIcon, Settings, WrapText, Sparkles } from 'lucide-react';
+import { FolderOpen, Save, Moon, Sun, Columns, Eye, FolderX, ChevronDown, FileDown, FilePlus, Search, Maximize, Minimize, Projector, Scan, FileCode, Rows, Columns as ColumnsIcon, Settings, WrapText, Sparkles, ScanEye, Scale3DIcon, NotebookPenIcon, BookAIcon, Github } from 'lucide-react';
 
 // Helper component for toolbar buttons with conditional labels
 const ToolbarButton: React.FC<{
@@ -126,6 +126,14 @@ export const Toolbar: React.FC = () => {
     await fileService.exportToHtml(html);
   };
 
+  const handleLoadFromGithub = async () => {
+    const url = window.prompt("Enter GitHub repository URL:");
+    if (url) {
+      // TODO: Implement GitHub loading logic
+      console.log("Loading from GitHub:", url);
+    }
+  };
+
   return (
     <div className="h-12 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 draggable">
       <div className="flex items-center space-x-1 no-drag">
@@ -159,6 +167,7 @@ export const Toolbar: React.FC = () => {
             </div>
           )}
         </div>
+        <ToolbarButton icon={<Github size={18} />} onClick={handleLoadFromGithub} title="Load from GitHub" />
 
         {currentFolder && (
           <button onClick={handleCloseFolder} className="btn-toolbar" title="Close Folder">
@@ -184,8 +193,10 @@ export const Toolbar: React.FC = () => {
         <ToolbarButton icon={<Scan size={18} />} label="Zen Mode" onClick={toggleDistractionFreeMode} showLabel={isEditing} title="Zen Mode"  />
           {isEditing ? <Eye size={18} /> : <Columns size={18} />}
         <ToolbarButton icon={<Scan size={18} />} label="Distraction Free" onClick={toggleDistractionFreeMode} showLabel={isEditing} title="Distraction Free Mode"  />
-        <span className="ml-2 text-sm">{isEditing ? 'Preview' : 'Edit'}</span>
-        <button onClick={toggleEditMode} className="btn-toolbar" title={isEditing ? "Switch to Preview" : "Switch to Edit"}>
+        
+        <button onClick={toggleEditMode} className="btn-toolbar"  title={isEditing ? "Switch to Preview" : "Switch to Edit"}>
+        <span className="ml-2 text-sm">{isEditing ? 'Preview'  : 'Edit'}</span>&nbsp;
+          {isEditing ? <BookAIcon size={18} /> : <NotebookPenIcon size={18} />}
         </button>
         <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-2" />
 

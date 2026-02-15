@@ -1,0 +1,22 @@
+/* Git Status Indicators */
+
+/* Added lines */
+.git-added-line-decoration {
+    background-color: rgba(46, 160, 67, 0.4); /* Green background for the line gutter */
+}
+.git-added-glyph {
+    color: #2ea043; /* Green icon */
+}
+
+/* Modified lines */
+.git-modified-line-decoration {
+    background-color: rgba(0, 122, 204, 0.4); /* Blue background for the line gutter */
+}
+.git-modified-glyph {
+    color: #007acc; /* Blue icon */
+}
+
+/* Deleted lines */
+.git-deleted-glyph {
+    color: #f14c4c; /* Red icon */
+}
