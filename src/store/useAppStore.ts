@@ -10,6 +10,7 @@ interface AppState {
   files: FileItem[];
   openFiles: FileItem[];
   currentFile: FileItem | null;
+  closedFiles: FileItem[];
   markdownContent: string;
   isEditing: boolean;
   isDarkMode: boolean;
@@ -35,7 +36,8 @@ interface AppState {
   
   setFolder: (folder: string) => void;
   setFiles: (files: FileItem[]) => void;
-  selectFile: (file: FileItem) => void;
+  setOpenFiles: (files: FileItem[]) => void;
+  selectFile: (file: FileItem | null) => void;
   setMarkdownContent: (content: string) => void;
   toggleEditMode: () => void;
   toggleDarkMode: () => void;
@@ -46,6 +48,8 @@ interface AppState {
   closeFile: (path: string) => Promise<void>;
   closeOthers: (path: string) => Promise<void>;
   closeToRight: (path: string) => Promise<void>;
+  reopenClosedTab: () => Promise<void>;
+  duplicateTab: (file: FileItem) => Promise<void>;
   closeFolder: () => void;
   setCursorPosition: (line: number, column: number) => void;
   triggerFind: () => void;
@@ -67,12 +71,16 @@ interface AppState {
   setCustomCSS: (css: string) => void;
   setFontSize: (size: number) => void;
   openSettingsFile: () => Promise<void>;
+  
 }
+
+
 
 export const useAppStore = create<AppState>((set, get) => ({
   currentFolder: null,
   files: [],
   openFiles: [],
+  closedFiles: [],
   currentFile: null,
   markdownContent: '',
   isEditing: false,
@@ -105,9 +113,15 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   setFolder: (folder) => set({ currentFolder: folder }),
   setFiles: (files) => set({ files }),
+  setOpenFiles: (files: FileItem[]) => set({ openFiles: files }),
   
   selectFile: async (file) => {
     const { currentFile, markdownContent, originalContent, openFiles } = get();
+
+    if (!file) {
+      set({ currentFile: null, markdownContent: '', originalContent: '' });
+      return;
+    }
     
     // Check for unsaved changes if switching files
     if (currentFile && currentFile.path !== file.path && markdownContent !== originalContent) {
@@ -146,6 +160,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   }),
 
   loadFileContent: async (path) => {
+    if (!path || path.startsWith('untitled:')) {
+      set({ markdownContent: '', originalContent: '', cursorPosition: { line: 1, column: 1 } });
+      return;
+    }
     try {
       const content = await fileService.readFile(path);
       set({ markdownContent: content, originalContent: content, cursorPosition: { line: 1, column: 1 } });
@@ -186,7 +204,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   closeFile: async (path) => {
-    const { currentFile, markdownContent, originalContent, openFiles } = get();
+    const { currentFile, markdownContent, originalContent, openFiles, closedFiles } = get();
     
     // If closing the active file and it has changes
     if (currentFile?.path === path && markdownContent !== originalContent) {
@@ -202,6 +220,11 @@ export const useAppStore = create<AppState>((set, get) => ({
       if (response === 0) {
         await get().saveCurrentFile();
       }
+    }
+
+    const fileToClose = openFiles.find(f => f.path === path);
+    if (fileToClose) {
+      set({ closedFiles: [...closedFiles, fileToClose] });
     }
 
     const newOpenFiles = openFiles.filter(f => f.path !== path);
@@ -221,7 +244,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   closeOthers: async (path) => {
-    const { currentFile, markdownContent, originalContent, openFiles } = get();
+    const { currentFile, markdownContent, originalContent, openFiles, closedFiles } = get();
     const targetFile = openFiles.find(f => f.path === path);
     if (!targetFile) return;
 
@@ -239,6 +262,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       if (response === 0) await get().saveCurrentFile();
     }
 
+    const filesToClose = openFiles.filter(f => f.path !== path);
+    set({ closedFiles: [...closedFiles, ...filesToClose] });
+
     set({ openFiles: [targetFile] });
     
     if (currentFile?.path !== path) {
@@ -248,7 +274,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   closeToRight: async (path) => {
-    const { currentFile, markdownContent, originalContent, openFiles } = get();
+    const { currentFile, markdownContent, originalContent, openFiles, closedFiles } = get();
     const index = openFiles.findIndex(f => f.path === path);
     if (index === -1) return;
 
@@ -271,6 +297,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
 
     const newOpenFiles = openFiles.slice(0, index + 1);
+    set({ closedFiles: [...closedFiles, ...filesToClose] });
     set({ openFiles: newOpenFiles });
 
     if (isCurrentClosing) {
@@ -278,6 +305,46 @@ export const useAppStore = create<AppState>((set, get) => ({
       set({ currentFile: newCurrent });
       await get().loadFileContent(newCurrent.path);
     }
+  },
+
+  reopenClosedTab: async () => {
+    const { closedFiles, openFiles } = get();
+    if (closedFiles.length === 0) return;
+
+    const lastClosed = closedFiles[closedFiles.length - 1];
+    const newClosedFiles = closedFiles.slice(0, -1);
+    set({ closedFiles: newClosedFiles });
+
+    if (!openFiles.some(f => f.path === lastClosed.path)) {
+      set({ openFiles: [...openFiles, lastClosed] });
+    }
+    await get().selectFile(lastClosed);
+  },
+
+  duplicateTab: async (file) => {
+    const { openFiles, markdownContent, currentFile } = get();
+    let content = '';
+    
+    if (currentFile && currentFile.path === file.path) {
+      content = markdownContent;
+    } else if (file.path && !file.path.startsWith('untitled:')) {
+      try {
+        content = await fileService.readFile(file.path);
+      } catch (e) {
+        console.error("Failed to read file for duplication", e);
+      }
+    }
+
+    const newFile: FileItem = {
+      ...file,
+      name: `${file.name} (copy)`,
+      path: `untitled:copy-${Date.now()}`,
+      parent: file.parent
+    };
+
+    set({ openFiles: [...openFiles, newFile] });
+    await get().selectFile(newFile);
+    set({ markdownContent: content, originalContent: content });
   },
 
   closeFolder: () => set({

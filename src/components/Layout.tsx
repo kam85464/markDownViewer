@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Save, X, FileText, FolderOpen, Clock, Trash2 } from 'lucide-react';
+import { Save, X, FileText, FolderOpen, Clock, Trash2, FilePlus, Pin, PinOff, FolderSearch } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { Toolbar } from './Toolbar';
 import { Tabs } from './Tabs';
@@ -138,12 +138,33 @@ export const Layout: React.FC = () => {
     setFolder,
     setFiles,
     loadRecentFolders,
-    recentFolders
+    recentFolders,
+    selectFile,
+    setMarkdownContent
   } = useAppStore();
 
   const [showDisclaimer, setShowDisclaimer] = useState(() => {
     return localStorage.getItem('disclaimer-dismissed') !== 'true';
   });
+  const [pinnedFolders, setPinnedFolders] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('pinnedFolders') || '[]');
+    } catch {
+      return [];
+    }
+  });
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; path: string } | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setContextMenu(null);
+      }
+    };
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, []);
 
   useEffect(() => {
     if (!autoSaveEnabled || !currentFile || markdownContent === originalContent) return;
@@ -180,8 +201,76 @@ export const Layout: React.FC = () => {
     loadRecentFolders();
   };
 
+  const handleNewFile = () => {
+    setMarkdownContent('');
+    selectFile({ name: 'Untitled', path: '', content: '' });
+  };
+
+  const handleContextMenu = (e: React.MouseEvent, path: string) => {
+    e.preventDefault();
+    setContextMenu({ x: e.clientX, y: e.clientY, path });
+  };
+
+  const handlePinToggle = (path: string) => {
+    let newPinned;
+    if (pinnedFolders.includes(path)) {
+      newPinned = pinnedFolders.filter(p => p !== path);
+    } else {
+      newPinned = [...pinnedFolders, path];
+    }
+    setPinnedFolders(newPinned);
+    localStorage.setItem('pinnedFolders', JSON.stringify(newPinned));
+    setContextMenu(null);
+  };
+
+  const handleRemoveRecent = (path: string) => {
+    const recent = JSON.parse(localStorage.getItem('recentFolders') || '[]');
+    const newRecent = recent.filter((f: string) => f !== path);
+    localStorage.setItem('recentFolders', JSON.stringify(newRecent));
+    
+    // Also remove from pinned if present
+    if (pinnedFolders.includes(path)) {
+      const newPinned = pinnedFolders.filter(p => p !== path);
+      setPinnedFolders(newPinned);
+      localStorage.setItem('pinnedFolders', JSON.stringify(newPinned));
+    }
+
+    loadRecentFolders();
+    setContextMenu(null);
+  };
+
+  const handleRevealInExplorer = (path: string) => {
+    fileService.showItemInFolder(path);
+    setContextMenu(null);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      // @ts-ignore - Electron adds 'path' to File object
+      const path = file.path;
+      if (path) {
+        handleRecentClick(path);
+      }
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const sortedRecentFolders = [...recentFolders].sort((a, b) => {
+    const isAPinned = pinnedFolders.includes(a);
+    const isBPinned = pinnedFolders.includes(b);
+    if (isAPinned === isBPinned) return 0;
+    return isAPinned ? -1 : 1;
+  });
+
   return (
-    <div className="flex flex-col h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+    <div className="flex flex-col h-screen bg-[#fcfcfc] dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       {/* {isPresentationMode && <Presentation />} */}
       <SettingsModal />
       <Toolbar />
@@ -202,7 +291,11 @@ export const Layout: React.FC = () => {
               <ErrorBoundary name="Preview">
                 <PreviewPane />
               </ErrorBoundary>
-              <div className={`absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-500 ${currentFile ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'} bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm z-10`}>
+              <div 
+                className={`absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-500 ${currentFile ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'} bg-[#fcfcfc]/50 dark:bg-gray-900/50 backdrop-blur-sm z-10`}
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+              >
                   <ParticleBackground />
                   <div className="relative group cursor-default" style={{ perspective: '1000px' }}>
                     <div className="absolute -inset-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full opacity-20 group-hover:opacity-40 blur-2xl transition-opacity duration-500 animate-pulse"></div>
@@ -214,13 +307,22 @@ export const Layout: React.FC = () => {
                   <h1 className="text-4xl font-bold mt-8 mb-3 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 tracking-tight">Markdown Viewer Pro</h1>
                   <p className="text-gray-500 dark:text-gray-400 mb-8 text-lg">Visualize your ideas with power and simplicity</p>
                   
-                  <button 
-                    onClick={handleOpenFolder}
-                    className="flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-full font-semibold text-lg transition-all shadow-lg hover:shadow-blue-500/40 hover:-translate-y-1 active:translate-y-0"
-                  >
-                    <FolderOpen size={24} />
-                    Open Folder
-                  </button>
+                  <div className="flex gap-4">
+                    <button 
+                      onClick={handleOpenFolder}
+                      className="flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-full font-semibold text-lg transition-all shadow-lg hover:shadow-blue-500/40 hover:-translate-y-1 active:translate-y-0"
+                    >
+                      <FolderOpen size={24} />
+                      Open Folder
+                    </button>
+                    <button 
+                      onClick={handleNewFile}
+                      className="flex items-center gap-3 px-8 py-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-full font-semibold text-lg transition-all shadow-lg hover:shadow-gray-500/20 hover:-translate-y-1 active:translate-y-0"
+                    >
+                      <FilePlus size={24} />
+                      New File
+                    </button>
+                  </div>
 
                   {recentFolders.length > 0 && (
                     <div className="mt-12 w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200 z-10">
@@ -234,18 +336,64 @@ export const Layout: React.FC = () => {
                           <Trash2 size={14} />
                         </button>
                       </div>
-                      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
-                        {recentFolders.slice(0, 5).map((folder, i) => (
+                      <div className="bg-[#fcfcfc]/80 dark:bg-gray-800/80 backdrop-blur-md rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
+                        {sortedRecentFolders.slice(0, 5).map((folder, i) => (
                           <button
                             key={i}
                             onClick={() => handleRecentClick(folder)}
+                            onContextMenu={(e) => handleContextMenu(e, folder)}
                             className="w-full text-left px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 border-b border-gray-100 dark:border-gray-700/50 last:border-0 flex items-center transition-colors group"
                           >
-                            <Clock size={14} className="mr-3 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                            {pinnedFolders.includes(folder) ? (
+                              <Pin size={14} className="mr-3 text-blue-500 fill-current" />
+                            ) : (
+                              <Clock size={14} className="mr-3 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                            )}
                             <span className="truncate opacity-80 group-hover:opacity-100 transition-opacity">{folder}</span>
                           </button>
                         ))}
                       </div>
+                    </div>
+                  )}
+
+                  {contextMenu && (
+                    <div 
+                      ref={menuRef}
+                      className="fixed z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg py-1 min-w-[160px]"
+                      style={{ top: contextMenu.y, left: contextMenu.x }}
+                    >
+                      <button 
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
+                        onClick={() => {
+                          handleRecentClick(contextMenu.path);
+                          setContextMenu(null);
+                        }}
+                      >
+                        <FolderOpen size={14} className="mr-2" />
+                        Open
+                      </button>
+                      <button 
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
+                        onClick={() => handleRevealInExplorer(contextMenu.path)}
+                      >
+                        <FolderSearch size={14} className="mr-2" />
+                        Reveal in Explorer
+                      </button>
+                      <button 
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
+                        onClick={() => handlePinToggle(contextMenu.path)}
+                      >
+                        {pinnedFolders.includes(contextMenu.path) ? <PinOff size={14} className="mr-2" /> : <Pin size={14} className="mr-2" />}
+                        {pinnedFolders.includes(contextMenu.path) ? "Unpin" : "Pin to Recent"}
+                      </button>
+                      <div className="h-px bg-gray-100 dark:bg-gray-700 my-1" />
+                      <button 
+                        className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
+                        onClick={() => handleRemoveRecent(contextMenu.path)}
+                      >
+                        <Trash2 size={14} className="mr-2" />
+                        Remove from Recent
+                      </button>
                     </div>
                   )}
               </div>

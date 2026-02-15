@@ -264,7 +264,7 @@ export const Toolbar: React.FC = () => {
   };
 
   return (
-    <div id="app-toolbar" className="h-12 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 draggable">
+    <div id="app-toolbar" className="h-12 bg-[#fcfcfc] dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 draggable">
       <div className="flex items-center space-x-1 no-drag">
         <div className="relative flex items-center" ref={dropdownRef}>
           <button onClick={handleOpenFolder} className="btn-toolbar rounded-r-none border-r border-gray-300 dark:border-gray-600"title="Open Folder">

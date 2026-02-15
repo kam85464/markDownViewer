@@ -127,7 +127,7 @@ export const PreviewPane: React.FC = () => {
   }
 
   return (
-    <div className="relative h-full w-full bg-white dark:bg-gray-900">
+    <div className="relative h-full w-full bg-[#fcfcfc] dark:bg-gray-900">
       {customCSS && <style>{customCSS}</style>}
       <div className="absolute top-4 right-8 z-10 flex gap-2 opacity-0 hover:opacity-100 transition-opacity duration-200">
         <button 
