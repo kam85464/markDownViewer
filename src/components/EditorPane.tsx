@@ -5,15 +5,34 @@ import { dracula, nord } from '../utils/themes';
 import { initVimMode } from 'monaco-vim';
 
 export const EditorPane: React.FC = () => {
-  const { markdownContent, setMarkdownContent, theme, setCursorPosition, findTrigger, isVimMode, isTypewriterMode, isSyncScroll, showMinimap, wordWrap, customCSS, isFocusMode, setIsTyping } = useAppStore();
+  const { markdownContent, setMarkdownContent, theme, setCursorPosition, findTrigger, isVimMode, isTypewriterMode, isSyncScroll, showMinimap, wordWrap, customCSS, isFocusMode, setIsTyping, fontSize, files, selectFile, currentFile } = useAppStore();
   const editorRef = useRef<any>(null);
   const vimModeRef = useRef<any>(null);
   const isTypewriterModeRef = useRef(isTypewriterMode);
   const isSyncScrollRef = useRef(isSyncScroll);
   const isScrollingFromPreview = useRef(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const definitionProviderRef = useRef<any>(null);
+  const filesRef = useRef(files);
+  const currentFileRef = useRef(currentFile);
 
-  const handleEditorDidMount: OnMount = (editor) => {
+  useEffect(() => {
+    filesRef.current = files;
+  }, [files]);
+
+  useEffect(() => {
+    currentFileRef.current = currentFile;
+  }, [currentFile]);
+
+  useEffect(() => {
+    return () => {
+      if (definitionProviderRef.current) {
+        definitionProviderRef.current.dispose();
+      }
+    };
+  }, []);
+
+  const handleEditorDidMount: OnMount = (editor, monaco) => {
     editorRef.current = editor;
     editor.onDidChangeCursorPosition((e) => {
       setCursorPosition(e.position.lineNumber, e.position.column);
@@ -27,6 +46,53 @@ export const EditorPane: React.FC = () => {
         const maxScroll = e.scrollHeight - layoutInfo.height;
         const percentage = maxScroll > 0 ? e.scrollTop / maxScroll : 0;
         window.dispatchEvent(new CustomEvent('editor-scroll', { detail: percentage }));
+      }
+    });
+
+    if (definitionProviderRef.current) {
+      definitionProviderRef.current.dispose();
+    }
+    // @ts-ignore
+    definitionProviderRef.current = monaco.languages.registerDefinitionProvider('markdown', {
+      provideDefinition: (model: any, position: any) => {
+        const lineContent = model.getLineContent(position.lineNumber);
+        const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+        let match;
+        
+        while ((match = linkRegex.exec(lineContent)) !== null) {
+          const start = match.index;
+          const end = start + match[0].length;
+          const urlStart = start + match[0].indexOf('(') + 1;
+          const urlEnd = end - 1;
+
+          if (position.column >= urlStart + 1 && position.column <= urlEnd + 1) {
+             const linkPath = match[2];
+             if (!filesRef.current || !currentFileRef.current) return null;
+
+             let targetPath = linkPath;
+             // Basic relative path resolution
+             if (!linkPath.startsWith('/') && !linkPath.startsWith('http') && !linkPath.includes(':')) {
+                const currentDir = currentFileRef.current.path.substring(0, currentFileRef.current.path.lastIndexOf('/'));
+                // Handle ../
+                const parts = currentDir.split('/');
+                const relParts = linkPath.split('/');
+                while (relParts[0] === '..' && parts.length > 0) {
+                    parts.pop();
+                    relParts.shift();
+                }
+                if (relParts[0] === '.') relParts.shift();
+                targetPath = [...parts, ...relParts].join('/');
+             }
+
+             const targetFile = filesRef.current.find((f: any) => f.path === targetPath || f.path.endsWith(linkPath));
+
+             if (targetFile) {
+               selectFile(targetFile);
+               return null;
+             }
+          }
+        }
+        return null;
       }
     });
   };
@@ -131,10 +197,12 @@ export const EditorPane: React.FC = () => {
         options={{
           minimap: { enabled: showMinimap },
           wordWrap: wordWrap ? 'on' : 'off',
-          fontSize: 14,
+          fontSize: fontSize || 14,
           scrollBeyondLastLine: isTypewriterMode, // Dynamic option
           automaticLayout: true,
           padding: { top: 16, bottom: 16 },
+          smoothScrolling: true,
+          cursorSmoothCaretAnimation: "on",
         }}
       />
     </div>

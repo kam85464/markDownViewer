@@ -19,3 +19,6 @@ coverage
 *.pid.lock
 *.log
 *.gz
+*.sh
+*.zip
+*.tar

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Save, X, FileText, FolderOpen, Clock, Trash2, FilePlus, Pin, PinOff, FolderSearch, BookOpen, Lightbulb } from 'lucide-react';
+import { Save, X, FileText, FolderOpen, Clock, Trash2, FilePlus, Pin, PinOff, FolderSearch, BookOpen, Lightbulb, FileCode, PenTool, BookOpenText, Scroll, Apple, AppWindow, Cpu, Car, Smartphone, Gamepad2, Watch, Headphones } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { Toolbar } from './Toolbar';
 import { Tabs } from './Tabs';
@@ -22,7 +22,36 @@ const TIPS = [
   "Quote: \"Simplicity is the soul of efficiency.\" – Austin Freeman",
   "Quote: \"Code is like humor. When you have to explain it, it’s bad.\" – Cory House",
   "Tip: You can export your markdown to PDF or HTML from the toolbar.",
-  "Tip: Toggle Zen Mode to remove distractions."
+  "Tip: Toggle Zen Mode to remove distractions.",
+  "Tip: Use the Command Palette (F1) to access all features quickly.",
+  "Quote: \"First, solve the problem. Then, write the code.\" – John Johnson",
+  "Quote: \"Any fool can write code that a computer can understand. Good programmers write code that humans can understand.\" – Martin Fowler",
+  "Tip: Customize the editor theme and font in settings for a personalized experience.",
+  "Tip: Use the built-in markdown syntax guide for quick reference.",
+  "Tip: Enable Auto-Save to never worry about losing your work.",
+  "Tip: Use the Split View to edit and preview side by side.",
+  "Quote: \"Programming isn't about what you know; it's about what you can figure out.\" – Chris Pine",
+  "Quote: \"The best way to get a project done faster is to start sooner.\" – Jim Highsmith",
+  "Tip: Use the integrated terminal for running scripts without leaving the app.",
+  "Tip: You can sync scroll between editor and preview for better navigation.",
+  "Tip: Use the 'Find in Files' feature to search across all your markdown files.",
+  "Quote: \"Simplicity is the ultimate sophistication.\" – Leonardo da Vinci",
+  "Quote: \"Code never lies, comments sometimes do.\" – Ron Jeffries",
+  "Tip: Regularly check for updates to get new features and improvements.",
+  "Tip: Use the 'Focus Mode' to dim everything except the current line for better concentration.",
+  "Tip: You can customize keyboard shortcuts in the settings to match your workflow.",
+  "Tip: Use the 'Zen Mode' to hide all UI elements and immerse yourself in writing.",
+  "Quote: \"The only way to learn a new programming language is by writing programs in it.\" – Dennis Ritchie",
+  "Quote: \"Experience is the name everyone gives to their mistakes.\" – Oscar Wilde",
+  "Tip: Use the 'Word Count Goal' feature to set writing targets and track your progress.",
+  "Tip: You can preview your markdown in different themes to see how it will look on various platforms.",
+  "Tip: Use the 'Version History' feature to keep track of changes and revert to previous versions if needed.",
+  "Quote: \"Programming is not about typing, it's about thinking.\" – Rich Hickey",
+  "Quote: \"The most disastrous thing that you can ever learn is your first programming language.\" – Alan Kay",
+  "Tip: Use the 'Markdown Linting' feature to ensure your markdown follows best practices and is free of common errors.",
+  "Tip: You can customize the CSS for the preview pane to make it look exactly how you want.",
+  "Tip: Use the 'Export' feature to save your markdown as PDF, HTML, or even DOCX for sharing with others.",
+  "Quote: \"Code is like a poem; it has to follow certain rhythms and patterns to be beautiful.\" – Unknown",
 ];
 
 const ParticleBackground: React.FC = () => {
@@ -139,6 +168,7 @@ export const Layout: React.FC = () => {
   const {
     isEditing,
     showTOC,
+    toggleTOC,
     autoSaveEnabled,
     saveCurrentFile,
     markdownContent,
@@ -169,10 +199,21 @@ export const Layout: React.FC = () => {
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; path: string } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const [dailyTip, setDailyTip] = useState("");
+  const [isSidebarVisible, setIsSidebarVisible] = useState(true);
 
   useEffect(() => {
     setDailyTip(TIPS[Math.floor(Math.random() * TIPS.length)]);
   }, []);
+
+  useEffect(() => {
+    if (!markdownContent) return;
+    const hasHeaders = /^#{1,6}\s/m.test(markdownContent);
+    if (hasHeaders && !showTOC) {
+      toggleTOC();
+    } else if (!hasHeaders && showTOC) {
+      toggleTOC();
+    }
+  }, [markdownContent, currentFile]);
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -182,6 +223,17 @@ export const Layout: React.FC = () => {
     };
     document.addEventListener('click', handleClick);
     return () => document.removeEventListener('click', handleClick);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
+        e.preventDefault();
+        setIsSidebarVisible(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   useEffect(() => {
@@ -198,6 +250,7 @@ export const Layout: React.FC = () => {
     const path = await fileService.selectFolder();
     if (path) {
       setFolder(path);
+      setFiles(null as any);
       const files = await fileService.scanFolder(path);
       setFiles(files);
       loadRecentFolders();
@@ -207,6 +260,7 @@ export const Layout: React.FC = () => {
   const handleRecentClick = async (path: string) => {
     try {
       setFolder(path);
+      setFiles(null as any);
       const files = await fileService.scanFolder(path);
       setFiles(files);
     } catch (error) {
@@ -243,6 +297,11 @@ Welcome to **Markdown Viewer Pro**!
 | Find File | \`Ctrl/Cmd + P\` |
 | Command Palette | \`F1\` |
 | Toggle Sidebar | \`Ctrl/Cmd + B\` |
+| Toggle Table of Contents | \`Ctrl/Cmd + T\` |
+| Toggle Zen Mode | \`Ctrl/Cmd + Shift + Z\` |
+| Toggle Focus Mode | \`Ctrl/Cmd + Shift + F\` |
+| Toggle Auto-Save | \`Ctrl/Cmd + Shift + A\` |
+
 
 Enjoy writing!
 `;
@@ -324,9 +383,10 @@ Enjoy writing!
       </div>
       <div className="flex flex-1 overflow-hidden">
 
-        {!isDistractionFreeMode && <div className={dimClass}><Sidebar /></div>}
+        {!isDistractionFreeMode && isSidebarVisible && <div className={`${dimClass} animate-in slide-in-from-left duration-300`}><Sidebar /></div>}
         <main id="app-main-content" className="flex-1 flex flex-col overflow-hidden relative"> 
-          {!isDistractionFreeMode && <div className={dimClass}><Tabs /></div>}
+          {!isDistractionFreeMode && <div className={`${dimClass} animate-in slide-in-from-top duration-300`}><Tabs /></div>}
+          <div className="flex flex-1 overflow-hidden relative">
           <div className={`flex-1 flex overflow-hidden relative ${splitDirection === 'horizontal' ? 'flex-col' : 'flex-row'}`}>
             {isEditing && (
             <div className={`${splitDirection === 'horizontal' ? 'h-1/2 w-full border-b' : 'w-1/2 h-full border-r'} border-gray-200 dark:border-gray-700`}>
@@ -347,11 +407,43 @@ Enjoy writing!
                   <ParticleBackground />
                   
                   <div className="z-20 flex flex-col items-center max-w-2xl w-full px-6 animate-in fade-in zoom-in-95 duration-500">
-                      <div className="relative group cursor-default mb-8" style={{ perspective: '1000px' }}>
-                        <div className="absolute -inset-10 bg-gradient-to-r from-blue-500/20 to-purple-600/20 rounded-full blur-3xl transition-opacity duration-500 opacity-0 group-hover:opacity-100 animate-pulse"></div>
-                        <div className="relative transform transition-all duration-700 group-hover:rotate-6 group-hover:scale-110">
-                           <FileText strokeWidth={1.5} size={120} className="text-gray-800 dark:text-gray-100 relative z-10 drop-shadow-2xl" />
-                           <FileText strokeWidth={1.5} size={120} className="text-blue-500/20 absolute top-3 left-3 z-0 blur-sm" />
+                      <div className="relative group cursor-default mb-10" style={{ perspective: '1000px' }}>
+                        <div className="absolute -inset-20 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 rounded-full blur-3xl transition-opacity duration-500 opacity-0 group-hover:opacity-100 animate-pulse"></div>
+                        <div className="relative transform transition-all duration-700 group-hover:rotate-3 group-hover:scale-110">
+                           <div className="relative z-20">
+                              <FileCode strokeWidth={1.5} size={130} className="text-gray-800 dark:text-gray-100 drop-shadow-2xl transition-colors duration-500 group-hover:text-blue-600 dark:group-hover:text-blue-400" />
+                           </div>
+                           
+                           {/* Tech Giants & Gadgets Animations */}
+                           <div className="absolute -top-10 -left-10 z-30 opacity-0 group-hover:opacity-100 transition-all duration-700 delay-75 group-hover:-translate-y-6 group-hover:-translate-x-6">
+                               <Apple size={32} className="text-gray-900 dark:text-white drop-shadow-md animate-bounce" />
+                           </div>
+                           <div className="absolute -top-8 -right-12 z-10 opacity-0 group-hover:opacity-100 transition-all duration-700 delay-100 group-hover:-translate-y-8 group-hover:translate-x-8">
+                                <AppWindow size={34} className="text-blue-500 drop-shadow-md animate-pulse" />
+                           </div>
+                           <div className="absolute top-1/2 -left-16 z-30 opacity-0 group-hover:opacity-100 transition-all duration-700 delay-150 group-hover:-translate-x-10">
+                                <Cpu size={30} className="text-green-500 drop-shadow-md animate-[spin_3s_linear_infinite]" />
+                           </div>
+                           <div className="absolute -bottom-6 -left-10 z-30 opacity-0 group-hover:opacity-100 transition-all duration-700 delay-200 group-hover:translate-y-6 group-hover:-translate-x-8">
+                                <Car size={36} className="text-red-500 drop-shadow-md" />
+                           </div>
+                           <div className="absolute top-1/3 -right-16 z-10 opacity-0 group-hover:opacity-100 transition-all duration-700 delay-300 group-hover:translate-x-10">
+                                <Smartphone size={28} className="text-purple-500 drop-shadow-md -rotate-12 animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite]" />
+                           </div>
+                           <div className="absolute -bottom-4 -right-6 z-30 opacity-0 group-hover:opacity-100 transition-all duration-700 delay-400 group-hover:translate-y-8 group-hover:translate-x-8">
+                                <Gamepad2 size={32} className="text-indigo-500 drop-shadow-md rotate-12 hover:rotate-45 transition-transform duration-300" />
+                           </div>
+                           <div className="absolute -top-12 left-1/2 z-20 opacity-0 group-hover:opacity-100 transition-all duration-700 delay-500 group-hover:-translate-y-10">
+                                <Watch size={26} className="text-orange-500 drop-shadow-md animate-bounce" style={{ animationDelay: '0.5s' }} />
+                           </div>
+                           <div className="absolute -bottom-10 left-1/2 z-20 opacity-0 group-hover:opacity-100 transition-all duration-700 delay-500 group-hover:translate-y-10">
+                                <Headphones size={28} className="text-pink-500 drop-shadow-md animate-pulse" />
+                           </div>
+
+                           <div className="absolute bottom-0 -right-8 z-40 transition-all duration-500 group-hover:translate-x-8 group-hover:-translate-y-4 group-hover:rotate-12">
+                              <PenTool strokeWidth={1.5} size={50} className="text-blue-600 dark:text-blue-400 drop-shadow-lg transform -rotate-12" fill="currentColor" fillOpacity={0.1} />
+                           </div>
+                           <FileCode strokeWidth={1.5} size={130} className="text-blue-500/20 absolute top-3 left-3 z-0 blur-sm transition-all duration-500 group-hover:translate-x-3 group-hover:translate-y-3" />
                         </div>
                       </div>
                       
@@ -477,6 +569,8 @@ Enjoy writing!
                   )}
               </div>
             </div>
+          </div>
+          {showTOC && !isDistractionFreeMode && <div className={`${dimClass} h-full animate-in slide-in-from-right duration-300`}><TableOfContents /></div>}
           </div>
         </main>
       </div>

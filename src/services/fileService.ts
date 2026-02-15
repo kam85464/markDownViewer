@@ -18,6 +18,9 @@ export interface IFileService {
   exportToPdf(html: string): Promise<void>;
   exportToHtml(html: string): Promise<void>;
   showItemInFolder(path: string): Promise<void>;
+  renameFile(oldPath: string, newPath: string): Promise<void>;
+  deleteFile(path: string): Promise<void>;
+  createFolder(path: string): Promise<void>;
 }
 
 class ElectronFileService implements IFileService {
@@ -68,6 +71,18 @@ class ElectronFileService implements IFileService {
 
   async showItemInFolder(path: string): Promise<void> {
     return await this.ipcRenderer.invoke('show-item-in-folder', path);
+  }
+
+  async renameFile(oldPath: string, newPath: string): Promise<void> {
+    return await this.ipcRenderer.invoke('rename-file', { oldPath, newPath });
+  }
+
+  async deleteFile(path: string): Promise<void> {
+    return await this.ipcRenderer.invoke('delete-file', path);
+  }
+
+  async createFolder(path: string): Promise<void> {
+    return await this.ipcRenderer.invoke('create-folder', path);
   }
 }
 
@@ -243,6 +258,18 @@ class BrowserFileService implements IFileService {
 
   async showItemInFolder(path: string): Promise<void> {
     console.warn('Show item in folder is not supported in browser mode.');
+  }
+
+  async renameFile(oldPath: string, newPath: string): Promise<void> {
+    console.warn('Rename file is not supported in browser mode.');
+  }
+
+  async deleteFile(path: string): Promise<void> {
+    console.warn('Delete file is not supported in browser mode.');
+  }
+
+  async createFolder(path: string): Promise<void> {
+    console.warn('Create folder is not supported in browser mode.');
   }
 }
 

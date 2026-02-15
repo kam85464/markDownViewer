@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { X, Settings, Check, Keyboard, Map, Link2, AlignVerticalJustifyCenter, Palette, Save, RotateCcw, HelpCircle, FileJson, Type, Download, Eye, Package, CheckCircle, Circle, Target } from 'lucide-react';
+import { X, Settings, Check, Keyboard, Map, Link2, AlignVerticalJustifyCenter, Palette, Save, RotateCcw, HelpCircle, FileJson, Type, Download, Eye, Package, CheckCircle, Circle, Target, Aperture } from 'lucide-react';
 
 // Load style presets from src/styles directory
 const stylePresets = import.meta.glob('@/styles/*.css', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
@@ -63,7 +63,11 @@ export const SettingsModal: React.FC = () => {
     customCSS,
     setCustomCSS,
     wordCountGoal,
-    setWordCountGoal
+    setWordCountGoal,
+    isFocusMode,
+    toggleFocusMode,
+    fontSize,
+    setFontSize
   } = useAppStore();
 
   const [previewStyle, setPreviewStyle] = useState<{ name: string, content: string } | null>(null);
@@ -173,6 +177,25 @@ export const SettingsModal: React.FC = () => {
                     </button>
                   ))}
                 </div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-100 dark:border-gray-700 mb-2">
+                  <div className="flex items-center">
+                    <div className="p-2 bg-white dark:bg-gray-800 rounded-md mr-3 text-gray-500 dark:text-gray-400">
+                      <Type size={18} />
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900 dark:text-gray-100 text-sm">Font Size</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">{fontSize || 14}px</div>
+                    </div>
+                  </div>
+                  <input
+                    type="range"
+                    min="10"
+                    max="32"
+                    value={fontSize || 14}
+                    onChange={(e) => setFontSize(parseInt(e.target.value))}
+                    className="w-32 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-blue-600"
+                  />
+                </div>
                 <ToggleItem label="Minimap" icon={Map} value={showMinimap} onChange={toggleMinimap} />
                 <ToggleItem label="Typewriter Mode" icon={AlignVerticalJustifyCenter} value={isTypewriterMode} onChange={toggleTypewriterMode} description="Keeps the cursor centered vertically" />
                 <ToggleItem label="Auto-Save" icon={Save} value={autoSaveEnabled} onChange={toggleAutoSave} description="Automatically save changes after 2 seconds of inactivity" />
@@ -182,6 +205,7 @@ export const SettingsModal: React.FC = () => {
                 <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Editor Behavior</h3>
                 <ToggleItem label="Vim Mode" icon={Keyboard} value={isVimMode} onChange={toggleVimMode} description="Enable Vim keybindings" />
                 <ToggleItem label="Sync Scroll" icon={Link2} value={isSyncScroll} onChange={toggleSyncScroll} description="Synchronize editor and preview scrolling" />
+                <ToggleItem label="Focus Mode" icon={Aperture} value={isFocusMode} onChange={toggleFocusMode} description="Dims the UI when you start typing" />
               </div>
 
               <div className="mb-6">
