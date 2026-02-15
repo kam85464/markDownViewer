@@ -40,14 +40,21 @@ const FeatureListModal: React.FC<{ onClose: () => void }> = ({ onClose }) => (
     <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full max-h-[80vh] overflow-y-auto">
       <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Features & User Manual</h2>
       <ul className="list-disc pl-5 space-y-2 text-gray-700 dark:text-gray-300 text-sm">
-        <li><strong>File Explorer:</strong> Open folders and navigate markdown files.</li>
-        <li><strong>Git Integration:</strong> View status, commit, push, pull, and manage PRs directly from the sidebar.</li>
-        <li><strong>Live Preview:</strong> See your markdown rendered in real-time.</li>
+        <li><strong>File Explorer:</strong> Open local folders or load GitHub repositories directly via URL.</li>
+        <li><strong>Git Integration:</strong> View status, commit, push, pull, create branches, and manage PRs directly from the sidebar.</li>
+        <li><strong>Live Preview:</strong> See your markdown rendered in real-time with support for diagrams and math.</li>
         <li><strong>Export:</strong> Export your documents to HTML or PDF.</li>
-        <li><strong>GitHub Load:</strong> Load repositories directly from GitHub URLs.</li>
-        <li><strong>Editor Modes:</strong> Switch between Vim and standard editing, or use Distraction Free mode.</li>
+        <li><strong>Editor Modes:</strong> Switch between Vim and standard editing, or use Distraction Free (Zen) mode.</li>
         <li><strong>Search:</strong> Filter files in the explorer or search text within the editor.</li>
+        <li><strong>Tour:</strong> Take a guided tour of the application features via the Help menu.</li>
+        <li><strong>Shortcuts:</strong> Press <kbd className="px-1 py-0.5 rounded bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-xs font-mono">F1</kbd> to toggle this help menu.</li>
       </ul>
+      <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded border border-gray-200 dark:border-gray-700">
+        <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100 mb-1">Disclaimer</h3>
+        <p className="text-xs text-gray-600 dark:text-gray-400">
+          This application is provided "as is", without warranty of any kind, express or implied. The authors or copyright holders shall not be liable for any claim, damages or other liability.
+        </p>
+      </div>
       <div className="mt-6 flex justify-end">
         <button onClick={onClose} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">Close</button>
       </div>

@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { Save } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Save, X } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { Toolbar } from './Toolbar';
 import { Tabs } from './Tabs';
@@ -25,6 +25,10 @@ export const Layout: React.FC = () => {
     isDistractionFreeMode,
     splitDirection
   } = useAppStore();
+
+  const [showDisclaimer, setShowDisclaimer] = useState(() => {
+    return localStorage.getItem('disclaimer-dismissed') !== 'true';
+  });
 
   useEffect(() => {
     if (!autoSaveEnabled || !currentFile || markdownContent === originalContent) return;
@@ -61,9 +65,23 @@ export const Layout: React.FC = () => {
             </div>
           </div>
         </main>
-     
       </div>
-     
+      
+      <div className="bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 px-3 py-0.5 text-[10px] text-gray-400 flex justify-between items-center">
+        {showDisclaimer ? (
+          <div className="flex items-center gap-2">
+            <span>Disclaimer: This application is provided "as is" without warranty.</span>
+            <button 
+              onClick={() => { setShowDisclaimer(false); localStorage.setItem('disclaimer-dismissed', 'true'); }} 
+              className="hover:text-gray-600 dark:hover:text-gray-200"
+              title="Dismiss"
+            >
+              <X size={10} />
+            </button>
+          </div>
+        ) : <div />}
+        {!isDistractionFreeMode && <StatusBar />}
+      </div>
     </div>
   );
 };
