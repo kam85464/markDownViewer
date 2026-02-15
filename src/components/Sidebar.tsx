@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { FileText, FolderOpen, Search, Loader, ChevronRight, ChevronDown, GitBranch, GitPullRequest, GitCommit, GitMerge, RefreshCw, Upload, Check, Plus, Key, Circle } from 'lucide-react';
 import { githubService } from '../services/githubService';
@@ -18,8 +18,9 @@ const FileTreeItem: React.FC<{
   currentFile: any;
   loadingFile: string | null;
   isDirty: boolean;
-}> = ({ node, depth, onSelect, currentFile, loadingFile, isDirty }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  defaultOpen?: boolean;
+}> = ({ node, depth, onSelect, currentFile, loadingFile, isDirty, defaultOpen }) => {
+  const [isOpen, setIsOpen] = useState(defaultOpen || false);
   const isSelected = currentFile?.path === node.file?.path;
   const isModified = node.type === 'file' && isSelected && isDirty;
 
@@ -42,6 +43,10 @@ const FileTreeItem: React.FC<{
       </button>
     );
   }
+
+  useEffect(() => {
+    if (defaultOpen) setIsOpen(true);
+  }, [defaultOpen]);
 
   return (
     <div>
@@ -70,6 +75,7 @@ const FileTreeItem: React.FC<{
                 currentFile={currentFile}
                 loadingFile={loadingFile}
                 isDirty={isDirty}
+                defaultOpen={defaultOpen}
               />
             ))}
         </div>
@@ -85,10 +91,10 @@ export const Sidebar: React.FC = () => {
   const [gitLoading, setGitLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'files' | 'prs'>('files');
   const [pullRequests, setPullRequests] = useState<any[]>([]);
-  const isDirty = currentFile && markdownContent !== originalContent;
+  const isDirty = !!currentFile && markdownContent !== originalContent;
 
   const filteredFiles = files ? files.filter(file =>
-    file.name.toLowerCase().includes(searchQuery.toLowerCase())
+    file.path.toLowerCase().includes(searchQuery.toLowerCase())
   ) : [];
 
   const fileTree = useMemo(() => {
@@ -300,6 +306,7 @@ export const Sidebar: React.FC = () => {
             currentFile={currentFile}
             loadingFile={loadingFile}
             isDirty={isDirty}
+            defaultOpen={!!searchQuery}
           />
         ))}
         {filteredFiles.length === 0 && searchQuery && (

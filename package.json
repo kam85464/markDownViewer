@@ -14,14 +14,15 @@
     "clsx": "^2.1.0",
     "electron-store": "^8.2.0",
     "highlight.js": "^11.9.0",
-    "jotai": "^2.6.4",
     "html-to-image": "^1.11.11",
+    "jotai": "^2.6.4",
     "katex": "^0.16.9",
     "lucide-react": "^0.330.0",
     "markdown-it": "^14.0.0",
     "markdown-it-highlightjs": "^4.0.1",
     "markdown-it-katex": "^2.0.3",
     "markdown-it-task-lists": "^2.1.1",
+    "marked": "^17.0.2",
     "mermaid": "^10.8.0",
     "monaco-editor": "^0.45.0",
     "monaco-vim": "^0.4.1",
@@ -36,8 +37,9 @@
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.10",
     "@types/markdown-it": "^13.0.7",
-    "@types/plantuml-encoder": "^1.4.0",
+    "@types/marked": "^5.0.2",
     "@types/node": "^22.0.0",
+    "@types/plantuml-encoder": "^1.4.0",
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
     "@types/reveal.js": "^5.0.1",
@@ -73,4 +75,5 @@
       ],
       "category": "public.app-category.utilities"
     }
-  }}
+  }
+}
