@@ -105,6 +105,7 @@ export const Tabs: React.FC = () => {
           onContextMenu={(e) => handleContextMenu(e, file)}
           className={`
             group flex items-center min-w-[120px] max-w-[200px] h-9 px-3 text-xs border-r border-gray-200 dark:border-gray-700 cursor-pointer select-none transition-colors duration-200
+            animate-in fade-in slide-in-from-left-2 duration-200
             ${currentFile?.path === file.path 
               ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 border-t-2 border-t-blue-600 dark:border-t-blue-400' 
               : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}
@@ -130,7 +131,7 @@ export const Tabs: React.FC = () => {
       {contextMenu && (
         <div
           ref={menuRef}
-          className="fixed z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg py-1 min-w-[160px]"
+          className="fixed z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg py-1 min-w-[160px] animate-in fade-in zoom-in-95 duration-100"
           style={{ top: contextMenu.y, left: contextMenu.x }}
         >
           <button

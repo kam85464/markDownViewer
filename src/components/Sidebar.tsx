@@ -1,7 +1,8 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { FileText, FolderOpen, Search, Loader, ChevronRight, ChevronDown, GitBranch, GitPullRequest, GitCommit, GitMerge, RefreshCw, Upload, Check, Plus, Key, Circle, ListCollapse } from 'lucide-react';
+import { FileText, FolderOpen, Search, Loader, ChevronRight, ChevronDown, GitBranch, GitPullRequest, GitCommit, GitMerge, RefreshCw, Upload, Check, Plus, Key, Circle, ListCollapse, Replace, Edit, Clock, Trash2, FolderPlus } from 'lucide-react';
 import { githubService } from '../services/githubService';
+import { fileService } from '../services/fileService';
 
 interface TreeNode {
   name: string;
@@ -15,11 +16,12 @@ const FileTreeItem: React.FC<{
   node: TreeNode;
   depth: number;
   onSelect: (file: any) => void;
+  onContextMenu: (e: React.MouseEvent, file: any) => void;
   currentFile: any;
   loadingFile: string | null;
   isDirty: boolean;
   defaultOpen?: boolean;
-}> = ({ node, depth, onSelect, currentFile, loadingFile, isDirty, defaultOpen }) => {
+}> = ({ node, depth, onSelect, onContextMenu, currentFile, loadingFile, isDirty, defaultOpen }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen || false);
   const isSelected = currentFile?.path === node.file?.path;
   const isModified = node.type === 'file' && isSelected && isDirty;
@@ -28,6 +30,7 @@ const FileTreeItem: React.FC<{
     return (
       <button
         onClick={() => onSelect(node.file)}
+        onContextMenu={(e) => onContextMenu(e, node.file)}
         className={`w-full text-left flex items-center py-1 px-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 ${
           isSelected ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-100' : 'text-gray-700 dark:text-gray-300'
         }`}
@@ -52,6 +55,7 @@ const FileTreeItem: React.FC<{
     <div>
       <button
         onClick={() => setIsOpen(!isOpen)}
+        onContextMenu={(e) => onContextMenu(e, { ...node, type: 'dir' })}
         className="w-full text-left flex items-center py-1 px-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 font-medium"
         style={{ paddingLeft: `${depth * 12}px` }}
       >
@@ -72,6 +76,7 @@ const FileTreeItem: React.FC<{
                 node={child}
                 depth={depth + 1}
                 onSelect={onSelect}
+                onContextMenu={onContextMenu}
                 currentFile={currentFile}
                 loadingFile={loadingFile}
                 isDirty={isDirty}
@@ -84,19 +89,62 @@ const FileTreeItem: React.FC<{
   );
 };
 
+const FileTreeSkeleton = () => (
+  <div className="p-2 space-y-2">
+    {[1, 2, 3, 4, 5, 6].map((i) => (
+      <div key={i} className="flex items-center gap-2 px-2 py-1 animate-pulse">
+        <div className="w-4 h-4 bg-gray-200 dark:bg-gray-800 rounded flex-shrink-0" />
+        <div className="h-3 bg-gray-200 dark:bg-gray-800 rounded" style={{ width: `${Math.random() * 50 + 30}%` }} />
+      </div>
+    ))}
+  </div>
+);
+
 export const Sidebar: React.FC = () => {
-  const { files, currentFile, selectFile, currentFolder, setMarkdownContent, markdownContent, originalContent } = useAppStore();
+  const { files, currentFile, selectFile, currentFolder, setMarkdownContent, markdownContent, originalContent, setFiles } = useAppStore();
   const [searchQuery, setSearchQuery] = useState('');
+  const [globalSearchQuery, setGlobalSearchQuery] = useState('');
+  const [replaceQuery, setReplaceQuery] = useState('');
+  const [isReplacing, setIsReplacing] = useState(false);
   const [loadingFile, setLoadingFile] = useState<string | null>(null);
   const [gitLoading, setGitLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'files' | 'prs'>('files');
+  const [activeTab, setActiveTab] = useState<'files' | 'prs' | 'search'>('files');
   const [pullRequests, setPullRequests] = useState<any[]>([]);
   const isDirty = !!currentFile && markdownContent !== originalContent;
   const [treeKey, setTreeKey] = useState(0);
+  const [defaultOpen, setDefaultOpen] = useState(true);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; file: any } | null>(null);
+  const contextMenuRef = useRef<HTMLDivElement>(null);
+  const [recentFiles, setRecentFiles] = useState<any[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('recentFiles') || '[]');
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    setDefaultOpen(true);
+  }, [currentFolder]);
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (contextMenuRef.current && !contextMenuRef.current.contains(e.target as Node)) {
+        setContextMenu(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
 
   const filteredFiles = files ? files.filter(file =>
     file.path.toLowerCase().includes(searchQuery.toLowerCase())
   ) : [];
+
+  const globalSearchResults = useMemo(() => {
+    if (!globalSearchQuery || !files) return [];
+    return files.filter(file => file.path.toLowerCase().includes(globalSearchQuery.toLowerCase()));
+  }, [files, globalSearchQuery]);
 
   const fileTree = useMemo(() => {
     const root: Record<string, TreeNode> = {};
@@ -137,6 +185,11 @@ export const Sidebar: React.FC = () => {
 
   const handleFileClick = async (file: any) => {
     selectFile(file);
+    
+    const newRecent = [file, ...recentFiles.filter(f => f.path !== file.path)].slice(0, 10);
+    setRecentFiles(newRecent);
+    localStorage.setItem('recentFiles', JSON.stringify(newRecent));
+
     if (file.download_url) {
       setLoadingFile(file.path);
       try {
@@ -236,31 +289,229 @@ export const Sidebar: React.FC = () => {
   };
 
   const handleCollapseAll = () => {
+    setDefaultOpen(false);
     setTreeKey(prev => prev + 1);
+  };
+
+  const handleReplaceAll = async () => {
+    if (!globalSearchQuery || !replaceQuery || !files) return;
+    if (isGithub) {
+      alert("Bulk replace is not currently supported for GitHub repositories.");
+      return;
+    }
+    
+    if (!window.confirm(`Replace "${globalSearchQuery}" with "${replaceQuery}" in all files?`)) return;
+
+    setIsReplacing(true);
+    let count = 0;
+    try {
+      for (const file of files) {
+        if ((file as any).isDirectory) continue;
+        try {
+          const content = await fileService.readFile(file.path);
+          if (content.includes(globalSearchQuery)) {
+            const newContent = content.replaceAll(globalSearchQuery, replaceQuery);
+            await fileService.saveFile(file.path, newContent);
+            count++;
+          }
+        } catch (e) {
+          console.error(`Failed to replace in ${file.path}`, e);
+        }
+      }
+      alert(`Replaced occurrences in ${count} files.`);
+    } finally {
+      setIsReplacing(false);
+    }
+  };
+
+  const handleNewFolder = async () => {
+    if (!contextMenu) return;
+    const { file } = contextMenu;
+    
+    if (isGithub) {
+      alert("Creating folders in GitHub repositories is not supported yet.");
+      setContextMenu(null);
+      return;
+    }
+
+    const folderName = prompt("Enter folder name:");
+    if (!folderName) {
+        setContextMenu(null);
+        return;
+    }
+
+    let parentPath = file.path;
+    // Determine if we are right-clicking a directory or a file
+    // Directory nodes have type: 'dir'
+    // File objects might have isDirectory: false or type: 'file'
+    const isDirectory = file.type === 'dir' || file.isDirectory === true;
+
+    if (!isDirectory) {
+        const parts = file.path.split('/');
+        parts.pop();
+        parentPath = parts.join('/');
+    }
+    
+    const newPath = parentPath ? `${parentPath}/${folderName}` : folderName;
+
+    try {
+        await fileService.createFolder(newPath);
+        if (currentFolder) {
+             const updatedFiles = await fileService.scanFolder(currentFolder);
+             setFiles(updatedFiles);
+        }
+    } catch (error: any) {
+        console.error("Create folder failed", error);
+        alert("Failed to create folder: " + error.message);
+    }
+    setContextMenu(null);
+  };
+
+  const handleContextMenu = (e: React.MouseEvent, file: any) => {
+    e.preventDefault();
+    setContextMenu({ x: e.clientX, y: e.clientY, file });
+  };
+
+  const handleRename = async () => {
+    if (!contextMenu) return;
+    const { file } = contextMenu;
+    
+    if (isGithub) {
+      alert("Renaming files in GitHub repositories is not supported yet.");
+      setContextMenu(null);
+      return;
+    }
+
+    const newName = prompt("Enter new file name:", file.name);
+    if (newName && newName !== file.name) {
+        const pathParts = file.path.split('/');
+        pathParts.pop();
+        const newPath = [...pathParts, newName].join('/');
+        
+        try {
+            await fileService.renameFile(file.path, newPath);
+            if (currentFolder) {
+                 const updatedFiles = await fileService.scanFolder(currentFolder);
+                 setFiles(updatedFiles);
+            }
+        } catch (error: any) {
+            console.error("Rename failed", error);
+            alert("Failed to rename file: " + error.message);
+        }
+    }
+    setContextMenu(null);
+  };
+
+  const handleDelete = async () => {
+    if (!contextMenu) return;
+    const { file } = contextMenu;
+    
+    if (isGithub) {
+      alert("Deleting files in GitHub repositories is not supported yet.");
+      setContextMenu(null);
+      return;
+    }
+
+    if (window.confirm(`Are you sure you want to delete ${file.name}?`)) {
+        try {
+            await fileService.deleteFile(file.path);
+            if (currentFolder) {
+                 const updatedFiles = await fileService.scanFolder(currentFolder);
+                 setFiles(updatedFiles);
+            }
+        } catch (error: any) {
+            console.error("Delete failed", error);
+            alert("Failed to delete file: " + error.message);
+        }
+    }
+    setContextMenu(null);
   };
 
   return (
     <div id="app-sidebar" className="w-64 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 h-full overflow-y-auto flex flex-col">
-      {isGithub && (
         <div className="flex border-b border-gray-200 dark:border-gray-700">
             <button 
                 className={`flex-1 py-2 text-xs font-medium transition-colors ${activeTab === 'files' ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
                 onClick={() => setActiveTab('files')}
             >
-                Files
+                Explorer
             </button>
+            <button 
+                className={`flex-1 py-2 text-xs font-medium transition-colors ${activeTab === 'search' ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
+                onClick={() => setActiveTab('search')}
+            >
+                Search
+            </button>
+            {isGithub && (
             <button 
                 className={`flex-1 py-2 text-xs font-medium transition-colors ${activeTab === 'prs' ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
                 onClick={() => { setActiveTab('prs'); handleGitAction('fetch-prs'); }}
             >
-                Pull Requests
+                PRs
             </button>
+            )}
+        </div>
+
+      {activeTab === 'search' && (
+        <div className="flex-1 flex flex-col animate-in fade-in slide-in-from-left-4 duration-300">
+          <div className="p-4 border-b border-gray-200 dark:border-gray-800">
+             <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+              Find in Files
+            </h2>
+            <div className="relative">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search workspace..."
+                className="w-full pl-8 pr-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-gray-200"
+                value={globalSearchQuery}
+                onChange={(e) => setGlobalSearchQuery(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div className="relative mt-2">
+              <Replace className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Replace with..."
+                className="w-full pl-8 pr-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-gray-200"
+                value={replaceQuery}
+                onChange={(e) => setReplaceQuery(e.target.value)}
+              />
+            </div>
+            <button
+              onClick={handleReplaceAll}
+              disabled={!globalSearchQuery || !replaceQuery || isReplacing || isGithub}
+              className="mt-2 w-full py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {isReplacing ? <Loader size={12} className="animate-spin" /> : <Replace size={12} />}
+              Replace All
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-2">
+             {globalSearchQuery && globalSearchResults.length === 0 && (
+                <div className="text-center text-sm text-gray-500 mt-4">No results found</div>
+             )}
+             {globalSearchResults.map(file => (
+               <button
+                key={file.path}
+                onClick={() => handleFileClick(file)}
+                className="w-full text-left flex items-center py-2 px-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
+               >
+                 <FileText size={14} className="mr-2 flex-shrink-0 text-gray-400" />
+                 <div className="truncate">
+                   <div className="font-medium">{file.name}</div>
+                   <div className="text-xs text-gray-400 truncate">{file.path}</div>
+                 </div>
+               </button>
+             ))}
+          </div>
         </div>
       )}
 
       {activeTab === 'files' ? (
       <>
-      <div className="p-4 border-b border-gray-200 dark:border-gray-800">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-800 animate-in fade-in duration-300">
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
             Explorer
@@ -301,7 +552,27 @@ export const Sidebar: React.FC = () => {
         )}
       </div>
       
-      <div className="flex-1 p-2">
+      {recentFiles.length > 0 && !searchQuery && (
+        <div className="border-b border-gray-200 dark:border-gray-800">
+            <div className="px-4 py-2 flex items-center justify-between">
+                <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Recent Files</h3>
+                <button onClick={() => { setRecentFiles([]); localStorage.removeItem('recentFiles'); }} className="text-gray-400 hover:text-red-500" title="Clear Recent Files">
+                    <Trash2 size={12} />
+                </button>
+            </div>
+            <div className="max-h-32 overflow-y-auto">
+                {recentFiles.map(file => (
+                    <button key={file.path} onClick={() => handleFileClick(file)} className="w-full text-left flex items-center py-1 px-4 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800">
+                        <Clock size={12} className="mr-2 flex-shrink-0" />
+                        <span className="truncate">{file.name}</span>
+                    </button>
+                ))}
+            </div>
+        </div>
+      )}
+
+      <div className="flex-1 p-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
+        {!files && currentFolder ? <FileTreeSkeleton /> : (
         <div key={treeKey}>
         {Object.values(fileTree)
           .sort((a, b) => {
@@ -314,22 +585,24 @@ export const Sidebar: React.FC = () => {
             node={node}
             depth={0}
             onSelect={handleFileClick}
+            onContextMenu={handleContextMenu}
             currentFile={currentFile}
             loadingFile={loadingFile}
             isDirty={isDirty}
-            defaultOpen={!!searchQuery}
+            defaultOpen={defaultOpen || !!searchQuery}
           />
         ))}
-        </div>
         {filteredFiles.length === 0 && searchQuery && (
           <div className="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
             No files found
           </div>
         )}
+        </div>
+        )}
       </div>
       </>
       ) : (
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto animate-in fade-in slide-in-from-right-4 duration-300">
             {gitLoading && <div className="p-4 text-center"><Loader size={20} className="animate-spin mx-auto text-gray-400" /></div>}
             {!gitLoading && pullRequests.length === 0 && <div className="p-4 text-center text-sm text-gray-500">No open pull requests</div>}
             {pullRequests.map(pr => (
@@ -341,6 +614,35 @@ export const Sidebar: React.FC = () => {
                     </div>
                 </a>
             ))}
+        </div>
+      )}
+      {contextMenu && (
+        <div
+          ref={contextMenuRef}
+          className="fixed z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg py-1 min-w-[160px] animate-in fade-in zoom-in-95 duration-100"
+          style={{ top: contextMenu.y, left: contextMenu.x }}
+        >
+          <button
+            onClick={handleNewFolder}
+            className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
+          >
+            <FolderPlus size={14} className="mr-2" />
+            New Folder
+          </button>
+          <button
+            onClick={handleRename}
+            className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
+          >
+            <Edit size={14} className="mr-2" />
+            Rename
+          </button>
+          <button
+            onClick={handleDelete}
+            className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center"
+          >
+            <Trash2 size={14} className="mr-2" />
+            Delete
+          </button>
         </div>
       )}
     </div>

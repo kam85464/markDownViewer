@@ -22,7 +22,36 @@ const TIPS = [
   "Quote: \"Simplicity is the soul of efficiency.\" – Austin Freeman",
   "Quote: \"Code is like humor. When you have to explain it, it’s bad.\" – Cory House",
   "Tip: You can export your markdown to PDF or HTML from the toolbar.",
-  "Tip: Toggle Zen Mode to remove distractions."
+  "Tip: Toggle Zen Mode to remove distractions.",
+  "Tip: Use the Command Palette (F1) to access all features quickly.",
+  "Quote: \"First, solve the problem. Then, write the code.\" – John Johnson",
+  "Quote: \"Any fool can write code that a computer can understand. Good programmers write code that humans can understand.\" – Martin Fowler",
+  "Tip: Customize the editor theme and font in settings for a personalized experience.",
+  "Tip: Use the built-in markdown syntax guide for quick reference.",
+  "Tip: Enable Auto-Save to never worry about losing your work.",
+  "Tip: Use the Split View to edit and preview side by side.",
+  "Quote: \"Programming isn't about what you know; it's about what you can figure out.\" – Chris Pine",
+  "Quote: \"The best way to get a project done faster is to start sooner.\" – Jim Highsmith",
+  "Tip: Use the integrated terminal for running scripts without leaving the app.",
+  "Tip: You can sync scroll between editor and preview for better navigation.",
+  "Tip: Use the 'Find in Files' feature to search across all your markdown files.",
+  "Quote: \"Simplicity is the ultimate sophistication.\" – Leonardo da Vinci",
+  "Quote: \"Code never lies, comments sometimes do.\" – Ron Jeffries",
+  "Tip: Regularly check for updates to get new features and improvements.",
+  "Tip: Use the 'Focus Mode' to dim everything except the current line for better concentration.",
+  "Tip: You can customize keyboard shortcuts in the settings to match your workflow.",
+  "Tip: Use the 'Zen Mode' to hide all UI elements and immerse yourself in writing.",
+  "Quote: \"The only way to learn a new programming language is by writing programs in it.\" – Dennis Ritchie",
+  "Quote: \"Experience is the name everyone gives to their mistakes.\" – Oscar Wilde",
+  "Tip: Use the 'Word Count Goal' feature to set writing targets and track your progress.",
+  "Tip: You can preview your markdown in different themes to see how it will look on various platforms.",
+  "Tip: Use the 'Version History' feature to keep track of changes and revert to previous versions if needed.",
+  "Quote: \"Programming is not about typing, it's about thinking.\" – Rich Hickey",
+  "Quote: \"The most disastrous thing that you can ever learn is your first programming language.\" – Alan Kay",
+  "Tip: Use the 'Markdown Linting' feature to ensure your markdown follows best practices and is free of common errors.",
+  "Tip: You can customize the CSS for the preview pane to make it look exactly how you want.",
+  "Tip: Use the 'Export' feature to save your markdown as PDF, HTML, or even DOCX for sharing with others.",
+  "Quote: \"Code is like a poem; it has to follow certain rhythms and patterns to be beautiful.\" – Unknown",
 ];
 
 const ParticleBackground: React.FC = () => {
@@ -139,6 +168,7 @@ export const Layout: React.FC = () => {
   const {
     isEditing,
     showTOC,
+    toggleTOC,
     autoSaveEnabled,
     saveCurrentFile,
     markdownContent,
@@ -169,10 +199,21 @@ export const Layout: React.FC = () => {
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; path: string } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const [dailyTip, setDailyTip] = useState("");
+  const [isSidebarVisible, setIsSidebarVisible] = useState(true);
 
   useEffect(() => {
     setDailyTip(TIPS[Math.floor(Math.random() * TIPS.length)]);
   }, []);
+
+  useEffect(() => {
+    if (!markdownContent) return;
+    const hasHeaders = /^#{1,6}\s/m.test(markdownContent);
+    if (hasHeaders && !showTOC) {
+      toggleTOC();
+    } else if (!hasHeaders && showTOC) {
+      toggleTOC();
+    }
+  }, [markdownContent, currentFile]);
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -182,6 +223,17 @@ export const Layout: React.FC = () => {
     };
     document.addEventListener('click', handleClick);
     return () => document.removeEventListener('click', handleClick);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
+        e.preventDefault();
+        setIsSidebarVisible(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   useEffect(() => {
@@ -198,6 +250,7 @@ export const Layout: React.FC = () => {
     const path = await fileService.selectFolder();
     if (path) {
       setFolder(path);
+      setFiles(null as any);
       const files = await fileService.scanFolder(path);
       setFiles(files);
       loadRecentFolders();
@@ -207,6 +260,7 @@ export const Layout: React.FC = () => {
   const handleRecentClick = async (path: string) => {
     try {
       setFolder(path);
+      setFiles(null as any);
       const files = await fileService.scanFolder(path);
       setFiles(files);
     } catch (error) {
@@ -243,6 +297,11 @@ Welcome to **Markdown Viewer Pro**!
 | Find File | \`Ctrl/Cmd + P\` |
 | Command Palette | \`F1\` |
 | Toggle Sidebar | \`Ctrl/Cmd + B\` |
+| Toggle Table of Contents | \`Ctrl/Cmd + T\` |
+| Toggle Zen Mode | \`Ctrl/Cmd + Shift + Z\` |
+| Toggle Focus Mode | \`Ctrl/Cmd + Shift + F\` |
+| Toggle Auto-Save | \`Ctrl/Cmd + Shift + A\` |
+
 
 Enjoy writing!
 `;
@@ -324,9 +383,10 @@ Enjoy writing!
       </div>
       <div className="flex flex-1 overflow-hidden">
 
-        {!isDistractionFreeMode && <div className={dimClass}><Sidebar /></div>}
+        {!isDistractionFreeMode && isSidebarVisible && <div className={`${dimClass} animate-in slide-in-from-left duration-300`}><Sidebar /></div>}
         <main id="app-main-content" className="flex-1 flex flex-col overflow-hidden relative"> 
-          {!isDistractionFreeMode && <div className={dimClass}><Tabs /></div>}
+          {!isDistractionFreeMode && <div className={`${dimClass} animate-in slide-in-from-top duration-300`}><Tabs /></div>}
+          <div className="flex flex-1 overflow-hidden relative">
           <div className={`flex-1 flex overflow-hidden relative ${splitDirection === 'horizontal' ? 'flex-col' : 'flex-row'}`}>
             {isEditing && (
             <div className={`${splitDirection === 'horizontal' ? 'h-1/2 w-full border-b' : 'w-1/2 h-full border-r'} border-gray-200 dark:border-gray-700`}>
@@ -509,6 +569,8 @@ Enjoy writing!
                   )}
               </div>
             </div>
+          </div>
+          {showTOC && !isDistractionFreeMode && <div className={`${dimClass} h-full animate-in slide-in-from-right duration-300`}><TableOfContents /></div>}
           </div>
         </main>
       </div>

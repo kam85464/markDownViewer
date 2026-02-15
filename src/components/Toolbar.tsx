@@ -3,7 +3,7 @@ import { useAppStore } from '../store/useAppStore';
 import { fileService } from '../services/fileService';
 import md from '../services/markdownService';
 import { githubService } from '../services/githubService';
-import { FolderOpen, Save, Moon, Sun, Columns, Eye, FolderX, ChevronDown, FileDown, FilePlus, Search, Maximize, Minimize, Projector, Scan, FileCode, Rows, Columns as ColumnsIcon, Settings, WrapText, Sparkles, ScanEye, Scale3DIcon, NotebookPenIcon, BookAIcon, Github, Loader, HelpCircle, Aperture } from 'lucide-react';
+import { FolderOpen, Save, Moon, Sun, Columns, Eye, FolderX, ChevronDown, FileDown, FilePlus, Search, Maximize, Minimize, Projector, Scan, FileCode, Rows, Columns as ColumnsIcon, Settings, WrapText, Sparkles, ScanEye, Scale3DIcon, NotebookPenIcon, BookAIcon, Github, Loader, HelpCircle, List } from 'lucide-react';
 
 // Helper component for toolbar buttons with conditional labels
 const ToolbarButton: React.FC<{
@@ -143,10 +143,10 @@ export const Toolbar: React.FC = () => {
     triggerFind,
     isDistractionFreeMode,
     toggleDistractionFreeMode,
-    isFocusMode,
-    toggleFocusMode,
     toggleSplitDirection,
     toggleSettings,
+    showTOC,
+    toggleTOC,
     wordWrap,
 
     markdownContent,
@@ -200,6 +200,7 @@ export const Toolbar: React.FC = () => {
     const path = await fileService.selectFolder();
     if (path) {
       setFolder(path);
+      setFiles(null as any);
       const files = await fileService.scanFolder(path);
       setFiles(files);
       loadRecentFolders();
@@ -209,6 +210,7 @@ export const Toolbar: React.FC = () => {
   const handleRecentClick = async (path: string) => {
     try {
       setFolder(path);
+      setFiles(null as any);
       const files = await fileService.scanFolder(path);
       setFiles(files);
       setShowRecent(false);
@@ -248,6 +250,7 @@ export const Toolbar: React.FC = () => {
     const url = window.prompt("Enter GitHub repository URL:");
     if (url) {
       setIsLoading(true);
+      setFiles(null as any);
       try {
         const result = await githubService.loadFromUrl(url);
         if (result.type === 'file' && result.content) {
@@ -281,7 +284,7 @@ export const Toolbar: React.FC = () => {
           </button>
 
           {showRecent && recentFolders.length > 0 && (
-            <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50 py-1">
+            <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50 py-1 animate-in fade-in zoom-in-95 duration-200">
               <div className="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700 mb-1">
                 Recent Folders
               </div>
@@ -321,10 +324,8 @@ export const Toolbar: React.FC = () => {
         {isEditing && (
           <ToolbarButton icon={<Sparkles size={18} />} label="Format" onClick={formatCurrentFile} showLabel={isEditing} title="Format Document" />
         )}
-        <ToolbarButton icon={<Aperture size={18} />} label="Focus" onClick={toggleFocusMode} showLabel={isEditing} title="Focus Mode (Dims UI when typing)" highlight={isFocusMode} />
+        <ToolbarButton icon={<List size={18} />} label="TOC" onClick={toggleTOC} showLabel={isEditing} title="Table of Contents" highlight={showTOC} />
         <ToolbarButton icon={<Scan size={18} />} label="Zen Mode" onClick={toggleDistractionFreeMode} showLabel={isEditing} title="Zen Mode"  />
-          {isEditing ? <Eye size={18} /> : <Columns size={18} />}
-        <ToolbarButton icon={<Scan size={18} />} label="Distraction Free" onClick={toggleDistractionFreeMode} showLabel={isEditing} title="Distraction Free Mode"  />
         
         <button onClick={toggleEditMode} className="btn-toolbar disabled:opacity-50 disabled:cursor-not-allowed" disabled={!currentFile} title={isEditing ? "Switch to Preview" : "Switch to Edit"}>
         <span className="ml-2 text-sm">{isEditing ? 'Preview'  : 'Edit'}</span>&nbsp;
@@ -345,7 +346,7 @@ export const Toolbar: React.FC = () => {
             <HelpCircle size={18} />
           </button>
           {showHelp && (
-            <div className="absolute top-full right-0 mt-1 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50 py-1">
+            <div className="absolute top-full right-0 mt-1 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50 py-1 animate-in fade-in zoom-in-95 duration-200">
               <button 
                 onClick={() => { setShowFeatures(true); setShowHelp(false); }}
                 className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"

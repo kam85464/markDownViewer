@@ -1,11 +1,26 @@
 import React, { memo, useMemo } from 'react';
 import { useAppStore } from '../store/useAppStore';
+import { GitBranch, WrapText } from 'lucide-react';
 
 // Memoize the Vim status container so React doesn't re-render it and wipe monaco-vim's content
 const VimStatus = memo(() => <div id="vim-status" className="mr-4 font-mono px-2 font-bold text-blue-600 dark:text-blue-400 min-w-[100px]" />, () => true);
 
 export const StatusBar: React.FC = () => {
-  const { currentFile, cursorPosition, isVimMode, markdownContent, wordCountGoal } = useAppStore();
+  const { currentFile, cursorPosition, isVimMode, markdownContent, wordCountGoal, currentFolder, wordWrap, toggleWordWrap } = useAppStore();
+
+  const branchName = useMemo(() => {
+    if (!currentFolder) return null;
+    if (currentFolder.startsWith('https://github.com')) {
+      try {
+        const url = new URL(currentFolder);
+        const parts = url.pathname.split('/').filter(Boolean);
+        return parts[3] || 'main';
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }, [currentFolder]);
 
   const { wordCount, readingTime } = useMemo(() => {
     const text = markdownContent || '';
@@ -23,6 +38,19 @@ export const StatusBar: React.FC = () => {
         {currentFile ? currentFile.path : ''}
       </div>
       <div className="flex items-center">
+        {branchName && (
+          <div className="mx-3 flex items-center gap-1 text-blue-600 dark:text-blue-400" title={`Current Branch: ${branchName}`}>
+            <GitBranch size={12} />
+            <span>{branchName}</span>
+          </div>
+        )}
+        <button 
+          onClick={toggleWordWrap} 
+          className={`mx-3 flex items-center gap-1 hover:text-blue-600 dark:hover:text-blue-400 transition-colors ${wordWrap ? 'text-blue-600 dark:text-blue-400' : ''}`} 
+          title={`Word Wrap: ${wordWrap ? 'On' : 'Off'}`}
+        >
+          <WrapText size={12} />
+        </button>
         {isVimMode && <VimStatus />}
         {wordCountGoal > 0 && (
            <div className="mx-3 flex items-center gap-2" title={`Goal: ${wordCountGoal} words`}>

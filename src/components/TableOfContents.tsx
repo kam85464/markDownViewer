@@ -1,12 +1,13 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { createMarkdownParser, slugify } from '../services/markdownService';
-import { Search, X } from 'lucide-react';
+import { Search, X, ListCollapse } from 'lucide-react';
 
 export const TableOfContents: React.FC = () => {
   const { markdownContent, showTOC } = useAppStore();
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeSlug, setActiveSlug] = useState<string>('');
 
   const headers = useMemo(() => {
     if (!markdownContent) return [];
@@ -86,6 +87,43 @@ export const TableOfContents: React.FC = () => {
     setCollapsed(newCollapsed);
   };
 
+  const handleCollapseAll = () => {
+    const newCollapsed = new Set<string>();
+    headers.forEach(header => {
+      if (header.hasChildren) {
+        newCollapsed.add(header.slug);
+      }
+    });
+    setCollapsed(newCollapsed);
+  };
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActiveSlug(entry.target.id);
+          }
+        });
+      },
+      { rootMargin: '0px 0px -80% 0px' }
+    );
+
+    const timeoutId = setTimeout(() => {
+      headers.forEach((header) => {
+        const element = document.getElementById(header.slug);
+        if (element) {
+          observer.observe(element);
+        }
+      });
+    }, 100);
+
+    return () => {
+      clearTimeout(timeoutId);
+      observer.disconnect();
+    };
+  }, [headers]);
+
   if (!showTOC) return null;
 
   const handleScroll = (id: string) => {
@@ -97,9 +135,14 @@ export const TableOfContents: React.FC = () => {
 
   return (
     <div className="w-64 bg-gray-50 dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 h-full overflow-y-auto p-4 hidden md:block">
-      <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">
-        Table of Contents
-      </h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+          Table of Contents
+        </h3>
+        <button onClick={handleCollapseAll} className="text-gray-400 hover:text-blue-500" title="Collapse All">
+          <ListCollapse size={14} />
+        </button>
+      </div>
       <div className="mb-4 relative">
         <Search className="absolute left-2 top-1.5 h-4 w-4 text-gray-400" />
         <input
@@ -137,7 +180,11 @@ export const TableOfContents: React.FC = () => {
                 </svg>
               )}
             </button>
-            <button onClick={() => handleScroll(header.slug)} className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 text-left flex-1 truncate transition-colors" title={header.text}>
+            <button 
+              onClick={() => handleScroll(header.slug)} 
+              className={`text-sm text-left flex-1 truncate transition-colors ${activeSlug === header.slug ? 'text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'}`} 
+              title={header.text}
+            >
               {header.text}
             </button>
           </li>
