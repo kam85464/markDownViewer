@@ -35,6 +35,7 @@ interface AppState {
   showSettings: boolean;
   customCSS: string;
   fontSize: number;
+  wordCountGoal: number;
   
   setFolder: (folder: string) => void;
   setFiles: (files: FileItem[]) => void;
@@ -75,6 +76,7 @@ interface AppState {
   setCustomCSS: (css: string) => void;
   setFontSize: (size: number) => void;
   openSettingsFile: () => Promise<void>;
+  setWordCountGoal: (goal: number) => void;
   
 }
 
@@ -116,6 +118,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   showSettings: false,
   customCSS: settingsService.get('customCSS'),
   fontSize: settingsService.get('fontSize'),
+  wordCountGoal: (settingsService.get('wordCountGoal' as any) as number) || 0,
 
   setFolder: (folder) => set({ currentFolder: folder }),
   setFiles: (files) => set({ files }),
@@ -431,5 +434,10 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   openSettingsFile: async () => {
     await settingsService.openInEditor();
+  },
+
+  setWordCountGoal: (goal) => {
+    settingsService.set('wordCountGoal' as any, goal);
+    set({ wordCountGoal: goal });
   },
 }));

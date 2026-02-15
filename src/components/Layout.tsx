@@ -221,7 +221,7 @@ export const Layout: React.FC = () => {
 
   const handleNewFile = () => {
     setMarkdownContent('');
-    selectFile({ name: 'Untitled', path: '', content: '' });
+    selectFile({ name: 'Untitled', path: '', parent: '' });
   };
 
   const handleQuickStart = async () => {
@@ -246,7 +246,7 @@ Welcome to **Markdown Viewer Pro**!
 
 Enjoy writing!
 `;
-    await selectFile({ name: 'Quick Start.md', path: 'untitled:Quick Start.md', parent: '', isDirectory: false });
+    await selectFile({ name: 'Quick Start.md', path: 'untitled:Quick Start.md', parent: '' });
     setMarkdownContent(content);
   };
 
