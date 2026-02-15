@@ -326,7 +326,7 @@ export const Toolbar: React.FC = () => {
           {isEditing ? <Eye size={18} /> : <Columns size={18} />}
         <ToolbarButton icon={<Scan size={18} />} label="Distraction Free" onClick={toggleDistractionFreeMode} showLabel={isEditing} title="Distraction Free Mode"  />
         
-        <button onClick={toggleEditMode} className="btn-toolbar"  title={isEditing ? "Switch to Preview" : "Switch to Edit"}>
+        <button onClick={toggleEditMode} className="btn-toolbar disabled:opacity-50 disabled:cursor-not-allowed" disabled={!currentFile} title={isEditing ? "Switch to Preview" : "Switch to Edit"}>
         <span className="ml-2 text-sm">{isEditing ? 'Preview'  : 'Edit'}</span>&nbsp;
           {isEditing ? <BookAIcon size={18} /> : <NotebookPenIcon size={18} />}
         </button>

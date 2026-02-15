@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Save, X, FileText, FolderOpen, Clock, Trash2, FilePlus, Pin, PinOff, FolderSearch, BookOpen, Lightbulb } from 'lucide-react';
+import { Save, X, FileText, FolderOpen, Clock, Trash2, FilePlus, Pin, PinOff, FolderSearch, BookOpen, Lightbulb, FileCode, PenTool, BookOpenText, Scroll, Apple, AppWindow, Cpu, Car, Smartphone, Gamepad2, Watch, Headphones } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { Toolbar } from './Toolbar';
 import { Tabs } from './Tabs';
@@ -347,11 +347,43 @@ Enjoy writing!
                   <ParticleBackground />
                   
                   <div className="z-20 flex flex-col items-center max-w-2xl w-full px-6 animate-in fade-in zoom-in-95 duration-500">
-                      <div className="relative group cursor-default mb-8" style={{ perspective: '1000px' }}>
-                        <div className="absolute -inset-10 bg-gradient-to-r from-blue-500/20 to-purple-600/20 rounded-full blur-3xl transition-opacity duration-500 opacity-0 group-hover:opacity-100 animate-pulse"></div>
-                        <div className="relative transform transition-all duration-700 group-hover:rotate-6 group-hover:scale-110">
-                           <FileText strokeWidth={1.5} size={120} className="text-gray-800 dark:text-gray-100 relative z-10 drop-shadow-2xl" />
-                           <FileText strokeWidth={1.5} size={120} className="text-blue-500/20 absolute top-3 left-3 z-0 blur-sm" />
+                      <div className="relative group cursor-default mb-10" style={{ perspective: '1000px' }}>
+                        <div className="absolute -inset-20 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 rounded-full blur-3xl transition-opacity duration-500 opacity-0 group-hover:opacity-100 animate-pulse"></div>
+                        <div className="relative transform transition-all duration-700 group-hover:rotate-3 group-hover:scale-110">
+                           <div className="relative z-20">
+                              <FileCode strokeWidth={1.5} size={130} className="text-gray-800 dark:text-gray-100 drop-shadow-2xl transition-colors duration-500 group-hover:text-blue-600 dark:group-hover:text-blue-400" />
+                           </div>
+                           
+                           {/* Tech Giants & Gadgets Animations */}
+                           <div className="absolute -top-10 -left-10 z-30 opacity-0 group-hover:opacity-100 transition-all duration-700 delay-75 group-hover:-translate-y-6 group-hover:-translate-x-6">
+                               <Apple size={32} className="text-gray-900 dark:text-white drop-shadow-md animate-bounce" />
+                           </div>
+                           <div className="absolute -top-8 -right-12 z-10 opacity-0 group-hover:opacity-100 transition-all duration-700 delay-100 group-hover:-translate-y-8 group-hover:translate-x-8">
+                                <AppWindow size={34} className="text-blue-500 drop-shadow-md animate-pulse" />
+                           </div>
+                           <div className="absolute top-1/2 -left-16 z-30 opacity-0 group-hover:opacity-100 transition-all duration-700 delay-150 group-hover:-translate-x-10">
+                                <Cpu size={30} className="text-green-500 drop-shadow-md animate-[spin_3s_linear_infinite]" />
+                           </div>
+                           <div className="absolute -bottom-6 -left-10 z-30 opacity-0 group-hover:opacity-100 transition-all duration-700 delay-200 group-hover:translate-y-6 group-hover:-translate-x-8">
+                                <Car size={36} className="text-red-500 drop-shadow-md" />
+                           </div>
+                           <div className="absolute top-1/3 -right-16 z-10 opacity-0 group-hover:opacity-100 transition-all duration-700 delay-300 group-hover:translate-x-10">
+                                <Smartphone size={28} className="text-purple-500 drop-shadow-md -rotate-12 animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite]" />
+                           </div>
+                           <div className="absolute -bottom-4 -right-6 z-30 opacity-0 group-hover:opacity-100 transition-all duration-700 delay-400 group-hover:translate-y-8 group-hover:translate-x-8">
+                                <Gamepad2 size={32} className="text-indigo-500 drop-shadow-md rotate-12 hover:rotate-45 transition-transform duration-300" />
+                           </div>
+                           <div className="absolute -top-12 left-1/2 z-20 opacity-0 group-hover:opacity-100 transition-all duration-700 delay-500 group-hover:-translate-y-10">
+                                <Watch size={26} className="text-orange-500 drop-shadow-md animate-bounce" style={{ animationDelay: '0.5s' }} />
+                           </div>
+                           <div className="absolute -bottom-10 left-1/2 z-20 opacity-0 group-hover:opacity-100 transition-all duration-700 delay-500 group-hover:translate-y-10">
+                                <Headphones size={28} className="text-pink-500 drop-shadow-md animate-pulse" />
+                           </div>
+
+                           <div className="absolute bottom-0 -right-8 z-40 transition-all duration-500 group-hover:translate-x-8 group-hover:-translate-y-4 group-hover:rotate-12">
+                              <PenTool strokeWidth={1.5} size={50} className="text-blue-600 dark:text-blue-400 drop-shadow-lg transform -rotate-12" fill="currentColor" fillOpacity={0.1} />
+                           </div>
+                           <FileCode strokeWidth={1.5} size={130} className="text-blue-500/20 absolute top-3 left-3 z-0 blur-sm transition-all duration-500 group-hover:translate-x-3 group-hover:translate-y-3" />
                         </div>
                       </div>
                       
