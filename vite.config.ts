@@ -38,7 +38,7 @@ export default defineConfig({
         manualChunks: {
           'mermaid': ['mermaid'],
           'monaco': ['monaco-editor', 'monaco-vim'],
-          'markdown': ['marked', 'markdown-it', 'markdown-it-abbr', 'markdown-it-container'],
+          'markdown': ['marked', 'markdown-it'],
           'math': ['katex'],
         },
       },
