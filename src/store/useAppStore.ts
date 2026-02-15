@@ -38,6 +38,9 @@ interface AppState {
   wordCountGoal: number;
   showRecentInSidebar: boolean;
   recentFilesLimit: number;
+  userId: string;
+  githubToken: string;
+  settingsGistId: string;
   
   setFolder: (folder: string) => void;
   setFiles: (files: FileItem[]) => void;
@@ -81,6 +84,8 @@ interface AppState {
   setWordCountGoal: (goal: number) => void;
   toggleShowRecentInSidebar: () => void;
   setRecentFilesLimit: (limit: number) => void;
+  setGithubToken: (token: string) => void;
+  setSettingsGistId: (id: string) => void;
   
 }
 
@@ -99,13 +104,13 @@ export const useAppStore = create<AppState>((set, get) => ({
   recentFolders: [],
   cursorPosition: { line: 1, column: 1 },
   findTrigger: 0,
-  isDistractionFreeMode: false,
-  isTypewriterMode: false,
+  isDistractionFreeMode: settingsService.get('isDistractionFreeMode') || false,
+  isTypewriterMode: settingsService.get('isTypewriterMode') || false,
   autoSaveEnabled: settingsService.get('autoSaveEnabled'),
-  isVimMode: false,
-  isFocusMode: false,
+  isVimMode: settingsService.get('isVimMode') || false,
+  isFocusMode: settingsService.get('isFocusMode') || false,
   isTyping: false,
-  theme: 'vs-dark',
+  theme: settingsService.get('theme') || 'vs-dark',
   showPlugins: false,
   plugins: [
     { id: 'core-markdown', name: 'Core Markdown', description: 'Basic markdown support', version: '1.0.0', author: 'System', enabled: true },
@@ -113,18 +118,21 @@ export const useAppStore = create<AppState>((set, get) => ({
     { id: 'katex', name: 'KaTeX Math', description: 'Render math equations', version: '1.0.0', author: 'System', enabled: true },
     { id: 'plantuml', name: 'PlantUML', description: 'Render PlantUML diagrams', version: '1.0.0', author: 'System', enabled: true },
     { id: 'community-theme-pack', name: 'Community Themes', description: 'Additional editor themes (Demo)', version: '0.1.0', author: 'Community', enabled: true },
-  ],
-  splitDirection: 'vertical',
-  showTOC: true,
-  showMinimap: false,
-  isSyncScroll: true,
-  wordWrap: true,
+  ].map(p => ({ ...p, enabled: settingsService.get(`plugin_${p.id}_enabled`) ?? p.enabled })),
+  splitDirection: settingsService.get('splitDirection') || 'vertical',
+  showTOC: settingsService.get('showTOC') ?? true,
+  showMinimap: settingsService.get('showMinimap') || false,
+  isSyncScroll: settingsService.get('isSyncScroll') ?? true,
+  wordWrap: settingsService.get('wordWrap') ?? true,
   showSettings: false,
   customCSS: settingsService.get('customCSS'),
   fontSize: settingsService.get('fontSize'),
   wordCountGoal: (settingsService.get('wordCountGoal' as any) as number) || 0,
   showRecentInSidebar: settingsService.get('showRecentInSidebar' as any) ?? true,
   recentFilesLimit: (settingsService.get('recentFilesLimit' as any) as number) || 10,
+  userId: settingsService.getUserId(),
+  githubToken: settingsService.get('githubToken') || '',
+  settingsGistId: settingsService.get('settingsGistId') || '',
 
   setFolder: (folder) => set({ currentFolder: folder }),
   setFiles: (files) => set({ files }),
@@ -376,9 +384,17 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   triggerFind: () => set((state) => ({ findTrigger: state.findTrigger + 1 })),
 
-  toggleDistractionFreeMode: () => set((state) => ({ isDistractionFreeMode: !state.isDistractionFreeMode })),
+  toggleDistractionFreeMode: () => set((state) => {
+    const newValue = !state.isDistractionFreeMode;
+    settingsService.set('isDistractionFreeMode', newValue);
+    return { isDistractionFreeMode: newValue };
+  }),
 
-  toggleTypewriterMode: () => set((state) => ({ isTypewriterMode: !state.isTypewriterMode })),
+  toggleTypewriterMode: () => set((state) => {
+    const newValue = !state.isTypewriterMode;
+    settingsService.set('isTypewriterMode', newValue);
+    return { isTypewriterMode: newValue };
+  }),
 
   toggleAutoSave: () => set((state) => {
     const newValue = !state.autoSaveEnabled;
@@ -386,38 +402,73 @@ export const useAppStore = create<AppState>((set, get) => ({
     return { autoSaveEnabled: newValue };
   }),
 
-  toggleVimMode: () => set((state) => ({ isVimMode: !state.isVimMode })),
+  toggleVimMode: () => set((state) => {
+    const newValue = !state.isVimMode;
+    settingsService.set('isVimMode', newValue);
+    return { isVimMode: newValue };
+  }),
 
-  toggleFocusMode: () => set((state) => ({ isFocusMode: !state.isFocusMode })),
+  toggleFocusMode: () => set((state) => {
+    const newValue = !state.isFocusMode;
+    settingsService.set('isFocusMode', newValue);
+    return { isFocusMode: newValue };
+  }),
 
   setIsTyping: (isTyping) => set({ isTyping }),
 
   togglePluginsModal: () => set((state) => ({ showPlugins: !state.showPlugins })),
 
-  enablePlugin: (id) => set((state) => ({
-    plugins: state.plugins.map(p => p.id === id ? { ...p, enabled: true } : p)
-  })),
+  enablePlugin: (id) => {
+    settingsService.set(`plugin_${id}_enabled`, true);
+    set((state) => ({
+      plugins: state.plugins.map(p => p.id === id ? { ...p, enabled: true } : p)
+    }));
+  },
 
-  disablePlugin: (id) => set((state) => ({
-    plugins: state.plugins.map(p => p.id === id ? { ...p, enabled: false } : p)
-  })),
+  disablePlugin: (id) => {
+    settingsService.set(`plugin_${id}_enabled`, false);
+    set((state) => ({
+      plugins: state.plugins.map(p => p.id === id ? { ...p, enabled: false } : p)
+    }));
+  },
 
-  toggleSplitDirection: () => set((state) => ({ splitDirection: state.splitDirection === 'vertical' ? 'horizontal' : 'vertical' })),
+  toggleSplitDirection: () => set((state) => {
+    const newValue = state.splitDirection === 'vertical' ? 'horizontal' : 'vertical';
+    settingsService.set('splitDirection', newValue);
+    return { splitDirection: newValue };
+  }),
 
-  toggleTOC: () => set((state) => ({ showTOC: !state.showTOC })),
+  toggleTOC: () => set((state) => {
+    const newValue = !state.showTOC;
+    settingsService.set('showTOC', newValue);
+    return { showTOC: newValue };
+  }),
 
-  toggleMinimap: () => set((state) => ({ showMinimap: !state.showMinimap })),
+  toggleMinimap: () => set((state) => {
+    const newValue = !state.showMinimap;
+    settingsService.set('showMinimap', newValue);
+    return { showMinimap: newValue };
+  }),
 
-  toggleSyncScroll: () => set((state) => ({ isSyncScroll: !state.isSyncScroll })),
+  toggleSyncScroll: () => set((state) => {
+    const newValue = !state.isSyncScroll;
+    settingsService.set('isSyncScroll', newValue);
+    return { isSyncScroll: newValue };
+  }),
 
   setTheme: (theme) => set(() => {
     const isDark = theme !== 'light';
     if (isDark) document.documentElement.classList.add('dark');
     else document.documentElement.classList.remove('dark');
+    settingsService.set('theme', theme);
     return { theme, isDarkMode: isDark };
   }),
 
-  toggleWordWrap: () => set((state) => ({ wordWrap: !state.wordWrap })),
+  toggleWordWrap: () => set((state) => {
+    const newValue = !state.wordWrap;
+    settingsService.set('wordWrap', newValue);
+    return { wordWrap: newValue };
+  }),
 
   toggleSettings: () => set((state) => ({ showSettings: !state.showSettings })),
 
@@ -456,5 +507,15 @@ export const useAppStore = create<AppState>((set, get) => ({
   setRecentFilesLimit: (limit) => {
     settingsService.set('recentFilesLimit' as any, limit);
     set({ recentFilesLimit: limit });
+  },
+
+  setGithubToken: (token) => {
+    settingsService.set('githubToken', token);
+    set({ githubToken: token });
+  },
+
+  setSettingsGistId: (id) => {
+    settingsService.set('settingsGistId', id);
+    set({ settingsGistId: id });
   },
 }));

@@ -15675,6 +15675,11 @@ process.env.DIST = require$$0.join(__dirname, "../dist");
 process.env.VITE_PUBLIC = require$$1$2.app.isPackaged ? process.env.DIST : require$$0.join(process.env.DIST, "../public");
 let win;
 const store = new Store();
+if (!store.get("userId")) {
+  const userId = "USER-" + require$$3$2.randomBytes(4).toString("hex").toUpperCase();
+  store.set("userId", userId);
+  store.set("registeredAt", (/* @__PURE__ */ new Date()).toISOString());
+}
 function createWindow() {
   const bounds = store.get("bounds");
   win = new require$$1$2.BrowserWindow({
@@ -15846,17 +15851,10 @@ require$$1$2.ipcMain.handle("export-html", async (_, htmlContent) => {
   return true;
 });
 require$$1$2.ipcMain.handle("get-settings", async () => {
-  return {
-    customCSS: store.get("customCSS") || "",
-    autoSaveEnabled: store.get("autoSaveEnabled") || false,
-    theme: store.get("theme") || "vs-dark",
-    isVimMode: store.get("isVimMode") || false,
-    showMinimap: store.get("showMinimap") || false,
-    isSyncScroll: store.get("isSyncScroll") || true,
-    isTypewriterMode: store.get("isTypewriterMode") || false,
-    wordWrap: store.get("wordWrap") || true,
-    fontSize: store.get("fontSize") || 14
-  };
+  return store.store;
+});
+require$$1$2.ipcMain.on("get-settings-sync", (event) => {
+  event.returnValue = store.store;
 });
 require$$1$2.ipcMain.handle("set-setting", async (_, key, value) => {
   store.set(key, value);
@@ -15869,4 +15867,13 @@ require$$1$2.ipcMain.handle("reset-settings", async () => {
 require$$1$2.ipcMain.handle("open-settings-editor", async () => {
   store.openInEditor();
   return true;
+});
+require$$1$2.ipcMain.handle("get-system-info", async () => {
+  return {
+    appVersion: require$$1$2.app.getVersion(),
+    electronVersion: process.versions.electron,
+    nodeVersion: process.versions.node,
+    platform: process.platform,
+    arch: process.arch
+  };
 });

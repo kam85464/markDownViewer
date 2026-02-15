@@ -11,7 +11,9 @@ electron.contextBridge.exposeInMainWorld("electron", {
   exportToPdf: (htmlContent) => electron.ipcRenderer.invoke("export-pdf", htmlContent),
   exportToHtml: (htmlContent) => electron.ipcRenderer.invoke("export-html", htmlContent),
   getSettings: () => electron.ipcRenderer.invoke("get-settings"),
+  getSettingsSync: () => electron.ipcRenderer.sendSync("get-settings-sync"),
   setSetting: (key, value) => electron.ipcRenderer.invoke("set-setting", key, value),
   resetSettings: () => electron.ipcRenderer.invoke("reset-settings"),
-  openSettingsInEditor: () => electron.ipcRenderer.invoke("open-settings-editor")
+  openSettingsInEditor: () => electron.ipcRenderer.invoke("open-settings-editor"),
+  getSystemInfo: () => electron.ipcRenderer.invoke("get-system-info")
 });
