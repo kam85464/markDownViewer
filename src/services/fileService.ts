@@ -17,6 +17,7 @@ export interface IFileService {
   saveFileAs(content: string): Promise<string | null>;
   exportToPdf(html: string): Promise<void>;
   exportToHtml(html: string): Promise<void>;
+  showItemInFolder(path: string): Promise<void>;
 }
 
 class ElectronFileService implements IFileService {
@@ -63,6 +64,10 @@ class ElectronFileService implements IFileService {
 
   async exportToHtml(html: string): Promise<void> {
     return await this.ipcRenderer.invoke('export-html', html);
+  }
+
+  async showItemInFolder(path: string): Promise<void> {
+    return await this.ipcRenderer.invoke('show-item-in-folder', path);
   }
 }
 
@@ -234,6 +239,10 @@ class BrowserFileService implements IFileService {
     a.download = 'export.html';
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  async showItemInFolder(path: string): Promise<void> {
+    console.warn('Show item in folder is not supported in browser mode.');
   }
 }
 

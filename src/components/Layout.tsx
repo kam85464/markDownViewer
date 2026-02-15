@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { Save } from 'lucide-react';
+import React, { useEffect, useState, useRef } from 'react';
+import { Save, X, FileText, FolderOpen, Clock, Trash2, FilePlus, Pin, PinOff, FolderSearch, BookOpen, Lightbulb } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { Toolbar } from './Toolbar';
 import { Tabs } from './Tabs';
@@ -11,7 +11,129 @@ import { useAppStore } from '../store/useAppStore';
 import { EditorPane } from './EditorPane';
 import { PreviewPane } from './PreviewPane';
 import { SettingsModal } from './SettingsModal';
+import { fileService } from '../services/fileService';
 
+
+const TIPS = [
+  "Tip: Drag and drop folders to open them instantly.",
+  "Tip: Use Ctrl+P (Cmd+P) to quickly search for files.",
+  "Tip: Enable Vim Mode in settings for keyboard-driven editing.",
+  "Tip: Right-click tabs to access more options like 'Close Others'.",
+  "Quote: \"Simplicity is the soul of efficiency.\" – Austin Freeman",
+  "Quote: \"Code is like humor. When you have to explain it, it’s bad.\" – Cory House",
+  "Tip: You can export your markdown to PDF or HTML from the toolbar.",
+  "Tip: Toggle Zen Mode to remove distractions."
+];
+
+const ParticleBackground: React.FC = () => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const mouseRef = useRef({ x: -1000, y: -1000 });
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let animationFrameId: number;
+    let particles: Array<{x: number, y: number, dx: number, dy: number, size: number}> = [];
+
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    window.addEventListener('resize', resize);
+    resize();
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      mouseRef.current = {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      };
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+
+    const createParticles = () => {
+      particles = [];
+      const particleCount = 50;
+      for (let i = 0; i < particleCount; i++) {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          dx: (Math.random() - 0.5) * 0.5,
+          dy: (Math.random() - 0.5) * 0.5,
+          size: Math.random() * 2 + 1
+        });
+      }
+    };
+    createParticles();
+
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const isDark = document.documentElement.classList.contains('dark');
+      ctx.fillStyle = isDark ? 'rgba(100, 149, 237, 0.2)' : 'rgba(100, 149, 237, 0.4)';
+      ctx.strokeStyle = isDark ? 'rgba(100, 149, 237, 0.05)' : 'rgba(100, 149, 237, 0.1)';
+      
+      particles.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+
+        p.x += p.dx;
+        p.y += p.dy;
+
+        if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+
+        // Mouse interaction
+        const dx = mouseRef.current.x - p.x;
+        const dy = mouseRef.current.y - p.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < 150) {
+          ctx.beginPath();
+          ctx.strokeStyle = isDark ? 'rgba(100, 149, 237, 0.15)' : 'rgba(100, 149, 237, 0.25)';
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(mouseRef.current.x, mouseRef.current.y);
+          ctx.stroke();
+          
+          // Gentle repel effect
+          if (distance < 100) {
+             const force = (100 - distance) / 100;
+             const angle = Math.atan2(dy, dx);
+             p.x -= Math.cos(angle) * force * 2;
+             p.y -= Math.sin(angle) * force * 2;
+          }
+        }
+      });
+      
+      for(let i=0; i<particles.length; i++) {
+        for(let j=i+1; j<particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          if (dist < 150) {
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.stroke();
+          }
+        }
+      }
+
+      animationFrameId = requestAnimationFrame(draw);
+    };
+    draw();
+
+    return () => {
+      window.removeEventListener('resize', resize);
+      window.removeEventListener('mousemove', handleMouseMove);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, []);
+
+  return <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none z-0" />;
+};
 
 export const Layout: React.FC = () => { 
   const {
@@ -23,8 +145,44 @@ export const Layout: React.FC = () => {
     originalContent,
     currentFile,
     isDistractionFreeMode,
-    splitDirection
+    splitDirection,
+    setFolder,
+    setFiles,
+    loadRecentFolders,
+    recentFolders,
+    selectFile,
+    setMarkdownContent,
+    isFocusMode,
+    isTyping
   } = useAppStore();
+
+  const [showDisclaimer, setShowDisclaimer] = useState(() => {
+    return localStorage.getItem('disclaimer-dismissed') !== 'true';
+  });
+  const [pinnedFolders, setPinnedFolders] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('pinnedFolders') || '[]');
+    } catch {
+      return [];
+    }
+  });
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; path: string } | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [dailyTip, setDailyTip] = useState("");
+
+  useEffect(() => {
+    setDailyTip(TIPS[Math.floor(Math.random() * TIPS.length)]);
+  }, []);
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setContextMenu(null);
+      }
+    };
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, []);
 
   useEffect(() => {
     if (!autoSaveEnabled || !currentFile || markdownContent === originalContent) return;
@@ -36,16 +194,139 @@ export const Layout: React.FC = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  const handleOpenFolder = async () => {
+    const path = await fileService.selectFolder();
+    if (path) {
+      setFolder(path);
+      const files = await fileService.scanFolder(path);
+      setFiles(files);
+      loadRecentFolders();
+    }
+  };
+
+  const handleRecentClick = async (path: string) => {
+    try {
+      setFolder(path);
+      const files = await fileService.scanFolder(path);
+      setFiles(files);
+    } catch (error) {
+      console.error('Failed to open recent folder:', error);
+    }
+  };
+
+  const handleClearRecent = () => {
+    localStorage.removeItem('recentFolders');
+    loadRecentFolders();
+  };
+
+  const handleNewFile = () => {
+    setMarkdownContent('');
+    selectFile({ name: 'Untitled', path: '', parent: '' });
+  };
+
+  const handleQuickStart = async () => {
+    const content = `# Quick Start Guide
+
+Welcome to **Markdown Viewer Pro**!
+
+## 🚀 Getting Started
+
+1. **Open a Folder**: Click the folder icon in the toolbar or drag a folder into the window.
+2. **Create a File**: Click the "New File" button or use the context menu in the file explorer.
+3. **Edit**: Just start typing! The preview updates automatically.
+
+## ⌨️ Key Shortcuts
+
+| Action | Shortcut |
+|--------|----------|
+| Save | \`Ctrl/Cmd + S\` |
+| Find File | \`Ctrl/Cmd + P\` |
+| Command Palette | \`F1\` |
+| Toggle Sidebar | \`Ctrl/Cmd + B\` |
+
+Enjoy writing!
+`;
+    await selectFile({ name: 'Quick Start.md', path: 'untitled:Quick Start.md', parent: '' });
+    setMarkdownContent(content);
+  };
+
+  const handleContextMenu = (e: React.MouseEvent, path: string) => {
+    e.preventDefault();
+    setContextMenu({ x: e.clientX, y: e.clientY, path });
+  };
+
+  const handlePinToggle = (path: string) => {
+    let newPinned;
+    if (pinnedFolders.includes(path)) {
+      newPinned = pinnedFolders.filter(p => p !== path);
+    } else {
+      newPinned = [...pinnedFolders, path];
+    }
+    setPinnedFolders(newPinned);
+    localStorage.setItem('pinnedFolders', JSON.stringify(newPinned));
+    setContextMenu(null);
+  };
+
+  const handleRemoveRecent = (path: string) => {
+    const recent = JSON.parse(localStorage.getItem('recentFolders') || '[]');
+    const newRecent = recent.filter((f: string) => f !== path);
+    localStorage.setItem('recentFolders', JSON.stringify(newRecent));
+    
+    // Also remove from pinned if present
+    if (pinnedFolders.includes(path)) {
+      const newPinned = pinnedFolders.filter(p => p !== path);
+      setPinnedFolders(newPinned);
+      localStorage.setItem('pinnedFolders', JSON.stringify(newPinned));
+    }
+
+    loadRecentFolders();
+    setContextMenu(null);
+  };
+
+  const handleRevealInExplorer = (path: string) => {
+    fileService.showItemInFolder(path);
+    setContextMenu(null);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      // @ts-ignore - Electron adds 'path' to File object
+      const path = file.path;
+      if (path) {
+        handleRecentClick(path);
+      }
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const sortedRecentFolders = [...recentFolders].sort((a, b) => {
+    const isAPinned = pinnedFolders.includes(a);
+    const isBPinned = pinnedFolders.includes(b);
+    if (isAPinned === isBPinned) return 0;
+    return isAPinned ? -1 : 1;
+  });
+
+  const dimClass = isFocusMode && isTyping ? 'opacity-10 transition-opacity duration-500 delay-100' : 'opacity-100 transition-opacity duration-200';
+
   return (
-    <div className="flex flex-col h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+    <div className="flex flex-col h-screen bg-[#fcfcfc] dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       {/* {isPresentationMode && <Presentation />} */}
       <SettingsModal />
-      <Toolbar />
+      <div className={dimClass}>
+        <Toolbar />
+      </div>
       <div className="flex flex-1 overflow-hidden">
 
-        {!isDistractionFreeMode && <Sidebar />}
-        <main className="flex-1 flex flex-col overflow-hidden relative"> 
-          {!isDistractionFreeMode && <Tabs />}
+        {!isDistractionFreeMode && <div className={dimClass}><Sidebar /></div>}
+        <main id="app-main-content" className="flex-1 flex flex-col overflow-hidden relative"> 
+          {!isDistractionFreeMode && <div className={dimClass}><Tabs /></div>}
           <div className={`flex-1 flex overflow-hidden relative ${splitDirection === 'horizontal' ? 'flex-col' : 'flex-row'}`}>
             {isEditing && (
             <div className={`${splitDirection === 'horizontal' ? 'h-1/2 w-full border-b' : 'w-1/2 h-full border-r'} border-gray-200 dark:border-gray-700`}>
@@ -54,16 +335,167 @@ export const Layout: React.FC = () => {
               </ErrorBoundary>
             </div>
           )}
-            <div className={`${isEditing ? (splitDirection === 'horizontal' ? 'h-1/2 w-full' : 'w-1/2 h-full') : 'w-full h-full'}`}>
+            <div className={`${isEditing ? (splitDirection === 'horizontal' ? 'h-1/2 w-full' : 'w-1/2 h-full') : 'w-full h-full'} relative ${dimClass}`}>
               <ErrorBoundary name="Preview">
                 <PreviewPane />
               </ErrorBoundary>
+              <div 
+                className={`absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-500 ${currentFile ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'} bg-gradient-to-br from-[#fcfcfc]/90 via-[#f1f5f9]/90 to-[#e2e8f0]/90 dark:from-gray-900/90 dark:via-gray-800/90 dark:to-gray-900/90 backdrop-blur-md z-10`}
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+              >
+                  <ParticleBackground />
+                  
+                  <div className="z-20 flex flex-col items-center max-w-2xl w-full px-6 animate-in fade-in zoom-in-95 duration-500">
+                      <div className="relative group cursor-default mb-8" style={{ perspective: '1000px' }}>
+                        <div className="absolute -inset-10 bg-gradient-to-r from-blue-500/20 to-purple-600/20 rounded-full blur-3xl transition-opacity duration-500 opacity-0 group-hover:opacity-100 animate-pulse"></div>
+                        <div className="relative transform transition-all duration-700 group-hover:rotate-6 group-hover:scale-110">
+                           <FileText strokeWidth={1.5} size={120} className="text-gray-800 dark:text-gray-100 relative z-10 drop-shadow-2xl" />
+                           <FileText strokeWidth={1.5} size={120} className="text-blue-500/20 absolute top-3 left-3 z-0 blur-sm" />
+                        </div>
+                      </div>
+                      
+                      <h1 className="text-5xl font-extrabold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 tracking-tight text-center drop-shadow-sm">
+                        Markdown Viewer Pro
+                      </h1>
+                      <p className="text-gray-600 dark:text-gray-300 mb-12 text-xl text-center font-light max-w-lg leading-relaxed">
+                        Visualize your ideas with power, simplicity, and elegance.
+                      </p>
+                      
+                      <div className="flex gap-6 mb-16">
+                        <button 
+                          onClick={handleOpenFolder}
+                          className="group relative px-8 py-4 bg-blue-600 text-white rounded-2xl font-semibold text-lg shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-all duration-300 hover:-translate-y-1 overflow-hidden"
+                        >
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                          <div className="flex items-center gap-3">
+                            <FolderOpen size={22} />
+                            <span>Open Folder</span>
+                          </div>
+                        </button>
+                        <button 
+                          onClick={handleNewFile}
+                          className="group px-8 py-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 rounded-2xl font-semibold text-lg shadow-lg shadow-gray-200/50 dark:shadow-none hover:shadow-xl hover:border-blue-500/50 dark:hover:border-blue-500/50 transition-all duration-300 hover:-translate-y-1"
+                        >
+                          <div className="flex items-center gap-3">
+                            <FilePlus size={22} className="group-hover:text-blue-500 transition-colors" />
+                            <span>New File</span>
+                          </div>
+                        </button>
+                        <button 
+                          onClick={handleQuickStart}
+                          className="group px-8 py-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 rounded-2xl font-semibold text-lg shadow-lg shadow-gray-200/50 dark:shadow-none hover:shadow-xl hover:border-blue-500/50 dark:hover:border-blue-500/50 transition-all duration-300 hover:-translate-y-1"
+                        >
+                          <div className="flex items-center gap-3">
+                            <BookOpen size={22} className="group-hover:text-blue-500 transition-colors" />
+                            <span>Quick Start</span>
+                          </div>
+                        </button>
+                      </div>
+
+                      {recentFolders.length > 0 && (
+                        <div className="w-full max-w-md animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
+                          <div className="flex items-center justify-between mb-4 px-2">
+                            <h3 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Recent Workspaces</h3>
+                            <button 
+                              onClick={handleClearRecent}
+                              className="text-gray-400 hover:text-red-500 transition-colors p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20"
+                              title="Clear Recent"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                          <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 dark:border-gray-700/50 overflow-hidden ring-1 ring-black/5 dark:ring-white/5">
+                            {sortedRecentFolders.slice(0, 5).map((folder, i) => (
+                              <button
+                                key={i}
+                                onClick={() => handleRecentClick(folder)}
+                                onContextMenu={(e) => handleContextMenu(e, folder)}
+                                className="w-full text-left px-5 py-3.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-white/80 dark:hover:bg-gray-700/80 border-b border-gray-100/50 dark:border-gray-700/50 last:border-0 flex items-center transition-all group relative overflow-hidden"
+                              >
+                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                {pinnedFolders.includes(folder) ? (
+                                  <Pin size={16} className="mr-4 text-blue-500 fill-blue-500/20" />
+                                ) : (
+                                  <Clock size={16} className="mr-4 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                                )}
+                                <span className="truncate font-medium opacity-90 group-hover:opacity-100 transition-opacity">{folder}</span>
+                                <div className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity text-gray-400">
+                                    <FolderOpen size={14} />
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="mt-12 flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400 bg-white/40 dark:bg-gray-800/40 px-4 py-2 rounded-full backdrop-blur-sm border border-white/20 dark:border-gray-700/30 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-300">
+                        <Lightbulb size={16} className="text-yellow-500" />
+                        <span className="italic">{dailyTip}</span>
+                      </div>
+                  </div>
+
+                  {contextMenu && (
+                    <div 
+                      ref={menuRef}
+                      className="fixed z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl py-1 min-w-[180px] animate-in fade-in zoom-in-95 duration-100"
+                      style={{ top: contextMenu.y, left: contextMenu.x }}
+                    >
+                      <button 
+                        className="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 flex items-center transition-colors"
+                        onClick={() => {
+                          handleRecentClick(contextMenu.path);
+                          setContextMenu(null);
+                        }}
+                      >
+                        <FolderOpen size={16} className="mr-3" />
+                        Open
+                      </button>
+                      <button 
+                        className="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 flex items-center transition-colors"
+                        onClick={() => handleRevealInExplorer(contextMenu.path)}
+                      >
+                        <FolderSearch size={16} className="mr-3" />
+                        Reveal in Explorer
+                      </button>
+                      <button 
+                        className="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 flex items-center transition-colors"
+                        onClick={() => handlePinToggle(contextMenu.path)}
+                      >
+                        {pinnedFolders.includes(contextMenu.path) ? <PinOff size={16} className="mr-3" /> : <Pin size={16} className="mr-3" />}
+                        {pinnedFolders.includes(contextMenu.path) ? "Unpin" : "Pin to Recent"}
+                      </button>
+                      <div className="h-px bg-gray-100 dark:bg-gray-700 my-1 mx-1" />
+                      <button 
+                        className="w-full text-left px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center transition-colors"
+                        onClick={() => handleRemoveRecent(contextMenu.path)}
+                      >
+                        <Trash2 size={16} className="mr-3" />
+                        Remove from Recent
+                      </button>
+                    </div>
+                  )}
+              </div>
             </div>
           </div>
         </main>
-     
       </div>
-     
+      
+      <div className={`bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 px-3 py-0.5 text-[10px] text-gray-400 flex justify-between items-center ${dimClass}`}>
+        {showDisclaimer ? (
+          <div className="flex items-center gap-2">
+            <span>Disclaimer: This application is provided "as is" without warranty.</span>
+            <button 
+              onClick={() => { setShowDisclaimer(false); localStorage.setItem('disclaimer-dismissed', 'true'); }} 
+              className="hover:text-gray-600 dark:hover:text-gray-200"
+              title="Dismiss"
+            >
+              <X size={10} />
+            </button>
+          </div>
+        ) : <div />}
+        {!isDistractionFreeMode && <StatusBar />}
+      </div>
     </div>
   );
 };

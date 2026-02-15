@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { FileText, FolderOpen, Search, Loader, ChevronRight, ChevronDown, GitBranch, GitPullRequest, GitCommit, GitMerge, RefreshCw, Upload, Check, Plus, Key, Circle } from 'lucide-react';
+import { FileText, FolderOpen, Search, Loader, ChevronRight, ChevronDown, GitBranch, GitPullRequest, GitCommit, GitMerge, RefreshCw, Upload, Check, Plus, Key, Circle, ListCollapse } from 'lucide-react';
 import { githubService } from '../services/githubService';
 
 interface TreeNode {
@@ -55,12 +55,12 @@ const FileTreeItem: React.FC<{
         className="w-full text-left flex items-center py-1 px-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 font-medium"
         style={{ paddingLeft: `${depth * 12}px` }}
       >
-        {isOpen ? <ChevronDown size={14} className="mr-1" /> : <ChevronRight size={14} className="mr-1" />}
+        <ChevronRight size={14} className={`mr-1 transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`} />
         <FolderOpen size={14} className="mr-2 flex-shrink-0" />
         <span className="truncate">{node.name}</span>
       </button>
       {isOpen && (
-        <div>
+        <div className="animate-in slide-in-from-top-1 fade-in duration-200">
           {Object.values(node.children)
             .sort((a, b) => {
               if (a.type === b.type) return a.name.localeCompare(b.name);
@@ -92,6 +92,7 @@ export const Sidebar: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'files' | 'prs'>('files');
   const [pullRequests, setPullRequests] = useState<any[]>([]);
   const isDirty = !!currentFile && markdownContent !== originalContent;
+  const [treeKey, setTreeKey] = useState(0);
 
   const filteredFiles = files ? files.filter(file =>
     file.path.toLowerCase().includes(searchQuery.toLowerCase())
@@ -234,8 +235,12 @@ export const Sidebar: React.FC = () => {
     }
   };
 
+  const handleCollapseAll = () => {
+    setTreeKey(prev => prev + 1);
+  };
+
   return (
-    <div className="w-64 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 h-full overflow-y-auto flex flex-col">
+    <div id="app-sidebar" className="w-64 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 h-full overflow-y-auto flex flex-col">
       {isGithub && (
         <div className="flex border-b border-gray-200 dark:border-gray-700">
             <button 
@@ -260,11 +265,16 @@ export const Sidebar: React.FC = () => {
           <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
             Explorer
           </h2>
-          {isGithub && (
-            <button onClick={() => handleGitAction('token')} className="text-gray-400 hover:text-blue-500" title="Set GitHub Token">
-              <Key size={14} />
+          <div className="flex gap-1">
+            <button onClick={handleCollapseAll} className="text-gray-400 hover:text-blue-500" title="Collapse All Folders">
+              <ListCollapse size={14} />
             </button>
-          )}
+            {isGithub && (
+              <button onClick={() => handleGitAction('token')} className="text-gray-400 hover:text-blue-500" title="Set GitHub Token">
+                <Key size={14} />
+              </button>
+            )}
+          </div>
         </div>
         <p className="text-xs text-gray-400 truncate mt-1 mb-3" title={currentFolder || ''}>
           {currentFolder ? currentFolder.split(/[/\\]/).pop() : 'No folder selected'}
@@ -292,6 +302,7 @@ export const Sidebar: React.FC = () => {
       </div>
       
       <div className="flex-1 p-2">
+        <div key={treeKey}>
         {Object.values(fileTree)
           .sort((a, b) => {
              if (a.type === b.type) return a.name.localeCompare(b.name);
@@ -309,6 +320,7 @@ export const Sidebar: React.FC = () => {
             defaultOpen={!!searchQuery}
           />
         ))}
+        </div>
         {filteredFiles.length === 0 && searchQuery && (
           <div className="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
             No files found

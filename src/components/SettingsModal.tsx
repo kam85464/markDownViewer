@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { X, Settings, Check, Keyboard, Map, Link2, AlignVerticalJustifyCenter, Palette, Save, RotateCcw, HelpCircle, FileJson, Type, Download, Eye, Package, CheckCircle, Circle } from 'lucide-react';
+import { X, Settings, Check, Keyboard, Map, Link2, AlignVerticalJustifyCenter, Palette, Save, RotateCcw, HelpCircle, FileJson, Type, Download, Eye, Package, CheckCircle, Circle, Target } from 'lucide-react';
 
 // Load style presets from src/styles directory
 const stylePresets = import.meta.glob('@/styles/*.css', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
@@ -61,7 +61,9 @@ export const SettingsModal: React.FC = () => {
     enablePlugin,
     disablePlugin,
     customCSS,
-    setCustomCSS
+    setCustomCSS,
+    wordCountGoal,
+    setWordCountGoal
   } = useAppStore();
 
   const [previewStyle, setPreviewStyle] = useState<{ name: string, content: string } | null>(null);
@@ -114,8 +116,8 @@ export const SettingsModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-[600px] max-h-[80vh] flex flex-col border border-gray-200 dark:border-gray-700">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-[600px] max-h-[80vh] flex flex-col border border-gray-200 dark:border-gray-700 animate-in zoom-in-95 duration-200">
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-semibold flex items-center">
             <Settings className="mr-2" size={20} /> Settings
@@ -180,6 +182,28 @@ export const SettingsModal: React.FC = () => {
                 <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Editor Behavior</h3>
                 <ToggleItem label="Vim Mode" icon={Keyboard} value={isVimMode} onChange={toggleVimMode} description="Enable Vim keybindings" />
                 <ToggleItem label="Sync Scroll" icon={Link2} value={isSyncScroll} onChange={toggleSyncScroll} description="Synchronize editor and preview scrolling" />
+              </div>
+
+              <div className="mb-6">
+                <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Writing Goals</h3>
+                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-100 dark:border-gray-700 mb-2">
+                    <div className="flex items-center">
+                      <div className="p-2 bg-white dark:bg-gray-800 rounded-md mr-3 text-gray-500 dark:text-gray-400">
+                        <Target size={18} /> 
+                      </div>
+                      <div>
+                        <div className="font-medium text-gray-900 dark:text-gray-100 text-sm">Daily Word Count Goal</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">Set a target number of words (0 to disable)</div>
+                      </div>
+                    </div>
+                    <input 
+                      type="number" 
+                      min="0"
+                      value={wordCountGoal} 
+                      onChange={(e) => setWordCountGoal(parseInt(e.target.value) || 0)}
+                      className="w-20 px-2 py-1 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 dark:text-gray-300"
+                    />
+                </div>
               </div>
 
               <div className="mt-6">
