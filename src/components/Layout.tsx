@@ -13,6 +13,7 @@ import { PreviewPane } from './PreviewPane';
 import { SettingsModal } from './SettingsModal';
 import { fileService } from '../services/fileService';
 import { githubService } from '../services/githubService';
+import { FileItem } from '../types/global';
 
 
 const TIPS = [
@@ -321,7 +322,7 @@ export const Layout: React.FC = () => {
     const path = await fileService.selectFolder();
     if (path) {
       setFolder(path);
-      setFiles(null as any);
+      setFiles(null);
       const files = await fileService.scanFolder(path);
       setFiles(files);
       loadRecentFolders();
@@ -331,7 +332,7 @@ export const Layout: React.FC = () => {
   const handleRecentClick = async (path: string) => {
     try {
       setFolder(path);
-      setFiles(null as any);
+      setFiles(null);
       const files = await fileService.scanFolder(path);
       setFiles(files);
     } catch (error) {
@@ -389,7 +390,7 @@ Enjoy writing!
   const handleLoadFromGithubHome = async () => {
     if (!githubUrl) return;
     setIsLoadingGithub(true);
-    setFiles(null as any);
+    setFiles(null);
     try {
       const result = await githubService.loadFromUrl(githubUrl);
       if (result.type === 'file' && result.content) {
@@ -397,10 +398,20 @@ Enjoy writing!
         selectFile({
             name: githubUrl.split('/').pop() || 'github-file.md',
             path: githubUrl,
-            isGithub: true
+            isGithub: true,
+            isDirectory: false
         });
       } else if (result.type === 'dir' && result.files) {
-        setFiles(result.files as any);
+        const mappedFiles: FileItem[] = result.files.map(f => ({
+            name: f.name,
+            path: f.path,
+            parent: f.parent,
+            isDirectory: f.type === 'dir',
+            isGithub: true,
+            download_url: f.download_url,
+            type: f.type
+        }));
+        setFiles(mappedFiles);
         setFolder(githubUrl);
       }
     } catch (error) {

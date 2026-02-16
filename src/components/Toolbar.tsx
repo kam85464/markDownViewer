@@ -4,6 +4,7 @@ import { fileService } from '../services/fileService';
 import md from '../services/markdownService';
 import { githubService } from '../services/githubService';
 import { FolderOpen, Save, Moon, Sun, Columns, Eye, FolderX, ChevronDown, FileDown, FilePlus, Search, Maximize, Minimize, Projector, Scan, FileCode, Rows, Columns as ColumnsIcon, Settings, WrapText, Sparkles, ScanEye, Scale3DIcon, NotebookPenIcon, BookAIcon, Github, Loader, HelpCircle, List } from 'lucide-react';
+import { FileItem } from '../types/global';
 
 // Helper component for toolbar buttons with conditional labels
 const ToolbarButton: React.FC<{
@@ -205,7 +206,7 @@ export const Toolbar: React.FC = () => {
     const path = await fileService.selectFolder();
     if (path) {
       setFolder(path);
-      setFiles(null as any);
+      setFiles(null);
       const files = await fileService.scanFolder(path);
       setFiles(files);
       loadRecentFolders();
@@ -215,7 +216,7 @@ export const Toolbar: React.FC = () => {
   const handleRecentClick = async (path: string) => {
     try {
       setFolder(path);
-      setFiles(null as any);
+      setFiles(null);
       const files = await fileService.scanFolder(path);
       setFiles(files);
       setShowRecent(false);
@@ -255,13 +256,22 @@ export const Toolbar: React.FC = () => {
     const url = window.prompt("Enter GitHub repository URL:");
     if (url) {
       setIsLoading(true);
-      setFiles(null as any);
+      setFiles(null);
       try {
         const result = await githubService.loadFromUrl(url);
         if (result.type === 'file' && result.content) {
           setMarkdownContent(result.content);
         } else if (result.type === 'dir' && result.files) {
-          setFiles(result.files as any);
+          const mappedFiles: FileItem[] = result.files.map(f => ({
+            name: f.name,
+            path: f.path,
+            parent: f.parent,
+            isDirectory: f.type === 'dir',
+            isGithub: true,
+            download_url: f.download_url,
+            type: f.type
+          }));
+          setFiles(mappedFiles);
           setFolder(url);
         }
       } catch (error) {

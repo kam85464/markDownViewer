@@ -1,10 +1,9 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { createMarkdownParser } from '../services/markdownService';
-import mermaid from 'mermaid';
 import plantumlEncoder from 'plantuml-encoder';
 import { toPng, toJpeg } from 'html-to-image';
-import { Download, Image as ImageIcon, Copy } from 'lucide-react';
+import { Download, Image as ImageIcon, Copy, Loader, ArrowUp } from 'lucide-react';
 import 'katex/dist/katex.min.css';
 import 'highlight.js/styles/github-dark.css';
 
@@ -14,20 +13,24 @@ export const PreviewPane: React.FC = () => {
   const contentRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
   const isScrollingFromEditor = useRef(false);
+  const [isRenderingMermaid, setIsRenderingMermaid] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
 
   // Re-create the markdown parser whenever the plugins list changes
   const md = useMemo(() => createMarkdownParser(plugins), [plugins]);
 
   useEffect(() => {
-    try {
-      mermaid.initialize({
-        startOnLoad: false,
-        theme: document.documentElement.classList.contains('dark') ? 'dark' : 'default',
-      });
-    } catch (e) {
-      console.warn("Mermaid init error:", e);
-    }
+    import('mermaid').then(m => {
+      try {
+        m.default.initialize({
+          startOnLoad: false,
+          theme: document.documentElement.classList.contains('dark') ? 'dark' : 'default',
+        });
+      } catch (e) {
+        console.warn("Mermaid init error:", e);
+      }
+    });
   }, []);
 
 
@@ -45,13 +48,17 @@ export const PreviewPane: React.FC = () => {
           // 2. Render Mermaid Diagrams (only if the plugin is enabled and nodes exist)
           const mermaidNodes = ref.querySelectorAll('.mermaid');
           if (mermaidNodes.length > 0) {
+            setIsRenderingMermaid(true);
             try {
+              const mermaid = (await import('mermaid')).default;
               await mermaid.run({
                 nodes: Array.from(mermaidNodes) as any,
               });
             } catch (err) {
               console.error('Mermaid error:', err);
               setError("Failed to render mermaid diagram.");
+            } finally {
+              setIsRenderingMermaid(false);
             }
           }
 
@@ -72,24 +79,60 @@ export const PreviewPane: React.FC = () => {
           const preBlocks = ref.querySelectorAll('pre');
           preBlocks.forEach(pre => {
              if (pre.querySelector('.copy-btn')) return;
-             const button = document.createElement('button');
-             button.className = 'copy-btn absolute top-2 right-2 p-1.5 rounded-md bg-gray-700/50 hover:bg-gray-700 text-gray-300 hover:text-white opacity-0 group-hover:opacity-100 transition-all duration-200';
-             button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
-             button.title = 'Copy Code';
+             
+             const actions = document.createElement('div');
+             actions.className = 'absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-200';
+
+             const collapseBtn = document.createElement('button');
+             collapseBtn.className = 'collapse-btn p-1.5 rounded-md bg-gray-700/50 hover:bg-gray-700 text-gray-300 hover:text-white transition-all duration-200';
+             collapseBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>';
+             collapseBtn.title = 'Collapse';
+
+             const copyBtn = document.createElement('button');
+             copyBtn.className = 'copy-btn p-1.5 rounded-md bg-gray-700/50 hover:bg-gray-700 text-gray-300 hover:text-white transition-all duration-200';
+             copyBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+             copyBtn.title = 'Copy Code';
              
              pre.classList.add('group', 'relative');
-             pre.appendChild(button);
+             
+             let isCollapsed = false;
+             const originalMaxHeight = pre.style.maxHeight;
+             const originalOverflow = pre.style.overflow;
 
-             button.addEventListener('click', async () => {
+             collapseBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                isCollapsed = !isCollapsed;
+                if (isCollapsed) {
+                    pre.style.maxHeight = '3rem';
+                    pre.style.overflow = 'hidden';
+                    collapseBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
+                    collapseBtn.title = 'Expand';
+                    actions.classList.remove('opacity-0', 'group-hover:opacity-100');
+                    actions.classList.add('opacity-100');
+                } else {
+                    pre.style.maxHeight = originalMaxHeight;
+                    pre.style.overflow = originalOverflow;
+                    collapseBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>';
+                    collapseBtn.title = 'Collapse';
+                    actions.classList.remove('opacity-100');
+                    actions.classList.add('opacity-0', 'group-hover:opacity-100');
+                }
+             });
+
+             copyBtn.addEventListener('click', async () => {
                 const code = pre.querySelector('code')?.innerText || pre.innerText;
                 await navigator.clipboard.writeText(code);
-                button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
-                button.classList.add('text-green-400');
+                copyBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+                copyBtn.classList.add('text-green-400');
                 setTimeout(() => {
-                   button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
-                   button.classList.remove('text-green-400');
+                   copyBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+                   copyBtn.classList.remove('text-green-400');
                 }, 2000);
              });
+
+             actions.appendChild(collapseBtn);
+             actions.appendChild(copyBtn);
+             pre.appendChild(actions);
           });
 
           // 5. Open external links in new tab
@@ -126,6 +169,10 @@ export const PreviewPane: React.FC = () => {
   }, [isSyncScroll]);
 
   const handleScroll = () => {
+    if (scrollRef.current) {
+      setShowScrollTop(scrollRef.current.scrollTop > 300);
+    }
+
     if (!isSyncScroll || !scrollRef.current || isScrollingFromEditor.current) return;
     
     const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
@@ -133,6 +180,10 @@ export const PreviewPane: React.FC = () => {
     const percentage = maxScroll > 0 ? scrollTop / maxScroll : 0;
     
     window.dispatchEvent(new CustomEvent('preview-scroll', { detail: percentage }));
+  };
+
+  const scrollToTop = () => {
+    scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleExport = async (type: 'png' | 'jpeg') => {
@@ -171,6 +222,21 @@ export const PreviewPane: React.FC = () => {
   return (
     <div className="relative h-full w-full bg-[#fcfcfc] dark:bg-gray-900">
       {customCSS && <style>{customCSS}</style>}
+      {isRenderingMermaid && (
+        <div className="absolute bottom-4 right-8 z-20 flex items-center gap-2 px-3 py-2 text-xs font-medium text-blue-600 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-blue-100 dark:border-blue-900/30 rounded-full shadow-lg animate-in fade-in slide-in-from-bottom-2">
+            <Loader className="w-3 h-3 animate-spin" />
+            <span>Rendering Diagrams...</span>
+        </div>
+      )}
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          className="absolute bottom-16 right-8 z-20 p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all duration-300 animate-in fade-in zoom-in-95 opacity-80 hover:opacity-100"
+          title="Scroll to Top"
+        >
+          <ArrowUp size={20} />
+        </button>
+      )}
       <div className="absolute top-4 right-8 z-10 flex gap-2 opacity-0 hover:opacity-100 transition-opacity duration-200">
         <button 
           onClick={handleCopyAll}
