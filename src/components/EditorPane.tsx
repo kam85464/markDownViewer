@@ -2,10 +2,9 @@ import React, { useRef, useEffect } from 'react';
 import MonacoEditor, { OnMount, BeforeMount } from '@monaco-editor/react';
 import { useAppStore } from '../store/useAppStore';
 import { dracula, nord } from '../utils/themes';
-import { initVimMode } from 'monaco-vim';
 
 export const EditorPane: React.FC = () => {
-  const { markdownContent, setMarkdownContent, theme, setCursorPosition, findTrigger, isVimMode, isTypewriterMode, isSyncScroll, showMinimap, wordWrap, customCSS, isFocusMode, setIsTyping, fontSize, files, selectFile, currentFile } = useAppStore();
+  const { markdownContent, setMarkdownContent, theme, setCursorPosition, findTrigger, isVimMode, isTypewriterMode, isSyncScroll, showMinimap, showLineNumbers, wordWrap, customCSS, isFocusMode, setIsTyping, fontSize, files, selectFile, currentFile } = useAppStore();
   const editorRef = useRef<any>(null);
   const vimModeRef = useRef<any>(null);
   const isTypewriterModeRef = useRef(isTypewriterMode);
@@ -110,12 +109,17 @@ export const EditorPane: React.FC = () => {
 
   useEffect(() => {
     if (!editorRef.current) return;
+    let canceled = false;
 
     // Small delay to ensure the DOM is ready if switching from Zen Mode
     if (isVimMode) {
       const statusNode = document.getElementById('vim-status');
       if (statusNode) {
-        vimModeRef.current = initVimMode(editorRef.current, statusNode);
+        import('monaco-vim').then(({ initVimMode }) => {
+          if (!canceled && editorRef.current) {
+            vimModeRef.current = initVimMode(editorRef.current, statusNode);
+          }
+        });
       }
     } else {
       if (vimModeRef.current) {
@@ -125,6 +129,7 @@ export const EditorPane: React.FC = () => {
     }
 
     return () => {
+      canceled = true;
       if (vimModeRef.current) {
         vimModeRef.current.dispose();
         vimModeRef.current = null;
@@ -196,6 +201,7 @@ export const EditorPane: React.FC = () => {
         beforeMount={handleBeforeMount}
         options={{
           minimap: { enabled: showMinimap },
+          lineNumbers: showLineNumbers ? 'on' : 'off',
           wordWrap: wordWrap ? 'on' : 'off',
           fontSize: fontSize || 14,
           scrollBeyondLastLine: isTypewriterMode, // Dynamic option

@@ -7,7 +7,7 @@ import { settingsService } from '../services/settingsService';
 
 interface AppState {
   currentFolder: string | null;
-  files: FileItem[];
+  files: FileItem[] | null;
   openFiles: FileItem[];
   currentFile: FileItem | null;
   closedFiles: FileItem[];
@@ -30,6 +30,7 @@ interface AppState {
   splitDirection: 'vertical' | 'horizontal';
   showTOC: boolean;
   showMinimap: boolean;
+  showLineNumbers: boolean;
   isSyncScroll: boolean;
   wordWrap: boolean;
   showSettings: boolean;
@@ -47,7 +48,7 @@ interface AppState {
   edgeStyle: 'sharp' | 'rounded' | 'curved';
   
   setFolder: (folder: string) => void;
-  setFiles: (files: FileItem[]) => void;
+  setFiles: (files: FileItem[] | null) => void;
   setOpenFiles: (files: FileItem[]) => void;
   selectFile: (file: FileItem | null) => void;
   setMarkdownContent: (content: string) => void;
@@ -77,6 +78,7 @@ interface AppState {
   toggleSplitDirection: () => void;
   toggleTOC: () => void;
   toggleMinimap: () => void;
+  toggleLineNumbers: () => void;
   toggleSyncScroll: () => void;
   setTheme: (theme: string) => void;
   toggleWordWrap: () => void;
@@ -130,6 +132,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   splitDirection: settingsService.get('splitDirection') || 'vertical',
   showTOC: settingsService.get('showTOC') ?? true,
   showMinimap: settingsService.get('showMinimap') || false,
+  showLineNumbers: settingsService.get('showLineNumbers') ?? true,
   isSyncScroll: settingsService.get('isSyncScroll') ?? true,
   wordWrap: settingsService.get('wordWrap') ?? true,
   showSettings: false,
@@ -147,7 +150,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   edgeStyle: settingsService.get('edgeStyle') || 'rounded',
 
   setFolder: (folder) => set({ currentFolder: folder }),
-  setFiles: (files) => set({ files }),
+  setFiles: (files) => set({ files: files || [] }),
   setOpenFiles: (files: FileItem[]) => set({ openFiles: files }),
   
   selectFile: async (file) => {
@@ -460,6 +463,12 @@ export const useAppStore = create<AppState>((set, get) => ({
     const newValue = !state.showMinimap;
     settingsService.set('showMinimap', newValue);
     return { showMinimap: newValue };
+  }),
+
+  toggleLineNumbers: () => set((state) => {
+    const newValue = !state.showLineNumbers;
+    settingsService.set('showLineNumbers', newValue);
+    return { showLineNumbers: newValue };
   }),
 
   toggleSyncScroll: () => set((state) => {

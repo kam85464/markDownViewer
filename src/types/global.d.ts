@@ -4,6 +4,8 @@ export interface FileItem {
   parent?: string;
   isDirectory?: boolean;
   isGithub?: boolean;
+  download_url?: string;
+  type?: 'file' | 'dir';
 }
 
 export interface IElectronAPI {

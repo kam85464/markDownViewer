@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { X, Settings, Check, Keyboard, Map, Link2, AlignVerticalJustifyCenter, Palette, Save, RotateCcw, HelpCircle, FileJson, Type, Download, Eye, Package, CheckCircle, Circle, Target, Aperture, Clock, List, User, Shield, HardDrive, Search, Upload, Github, Cloud, Trash2, Info, Image, Lightbulb, Square, Circle as CircleIcon, AppWindow } from 'lucide-react';
+import { X, Settings, Check, Keyboard, Map, Link2, AlignVerticalJustifyCenter, Palette, Save, RotateCcw, HelpCircle, FileJson, Type, Download, Eye, Package, CheckCircle, Circle, Target, Aperture, Clock, List, User, Shield, HardDrive, Search, Upload, Github, Cloud, Trash2, Info, Image, Lightbulb, Square, Circle as CircleIcon, AppWindow, ListOrdered } from 'lucide-react';
 
 // Load style presets from src/styles directory
 const stylePresets = import.meta.glob('@/styles/*.css', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
@@ -51,6 +51,8 @@ export const SettingsModal: React.FC = () => {
     toggleVimMode,
     showMinimap,
     toggleMinimap,
+    showLineNumbers,
+    toggleLineNumbers,
     isSyncScroll,
     toggleSyncScroll,
     isTypewriterMode,
@@ -544,6 +546,7 @@ export const SettingsModal: React.FC = () => {
               <div>
                 <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Behavior</h3>
                 <ToggleItem label="Minimap" icon={Map} value={showMinimap} onChange={toggleMinimap} />
+                <ToggleItem label="Line Numbers" icon={ListOrdered} value={showLineNumbers} onChange={toggleLineNumbers} />
                 <ToggleItem label="Typewriter Mode" icon={AlignVerticalJustifyCenter} value={isTypewriterMode} onChange={toggleTypewriterMode} description="Keeps the cursor centered vertically" />
                 <ToggleItem label="Vim Mode" icon={Keyboard} value={isVimMode} onChange={toggleVimMode} description="Enable Vim keybindings" />
                 <ToggleItem label="Sync Scroll" icon={Link2} value={isSyncScroll} onChange={toggleSyncScroll} description="Synchronize editor and preview scrolling" />

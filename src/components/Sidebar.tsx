@@ -306,7 +306,7 @@ export const Sidebar: React.FC = () => {
     let count = 0;
     try {
       for (const file of files) {
-        if ((file as any).isDirectory) continue;
+        if (file.isDirectory) continue;
         try {
           const content = await fileService.readFile(file.path);
           if (content.includes(globalSearchQuery)) {
