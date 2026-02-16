@@ -1,7 +1,9 @@
 export interface FileItem {
   name: string;
   path: string;
-  parent: string;
+  parent?: string;
+  isDirectory?: boolean;
+  isGithub?: boolean;
 }
 
 export interface IElectronAPI {

@@ -1,12 +1,24 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { X, FileText } from 'lucide-react';
+import { X, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export const Tabs: React.FC = () => {
   const { openFiles, currentFile, selectFile, closeFile, setOpenFiles, markdownContent, originalContent, closeToRight, duplicateTab, reopenClosedTab, closedFiles } = useAppStore();
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; file: any } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const [draggedIndex, setDragIndex] = useState<number | null>(null);
+  const tabsContainerRef = useRef<HTMLDivElement>(null);
+  const [showScroll, setShowScroll] = useState({ left: false, right: false });
+
+  const checkOverflow = () => {
+    const container = tabsContainerRef.current;
+    if (container) {
+      const hasOverflow = container.scrollWidth > container.clientWidth;
+      const canScrollLeft = container.scrollLeft > 5;
+      const canScrollRight = container.scrollLeft < container.scrollWidth - container.clientWidth - 5;
+      setShowScroll({ left: hasOverflow && canScrollLeft, right: hasOverflow && canScrollRight });
+    }
+  };
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -17,6 +29,21 @@ export const Tabs: React.FC = () => {
     document.addEventListener('click', handleClick);
     return () => document.removeEventListener('click', handleClick);
   }, []);
+
+  useEffect(() => {
+    checkOverflow();
+    window.addEventListener('resize', checkOverflow);
+    const container = tabsContainerRef.current;
+    if (container) {
+      container.addEventListener('scroll', checkOverflow, { passive: true });
+    }
+    return () => {
+      window.removeEventListener('resize', checkOverflow);
+      if (container) {
+        container.removeEventListener('scroll', checkOverflow);
+      }
+    };
+  }, [openFiles]);
 
   const handleContextMenu = (e: React.MouseEvent, file: any) => {
     e.preventDefault();
@@ -91,42 +118,67 @@ export const Tabs: React.FC = () => {
     setDragIndex(null);
   };
 
+  const handleScrollClick = (direction: 'left' | 'right') => {
+    tabsContainerRef.current?.scrollBy({
+      left: direction === 'left' ? -250 : 250,
+      behavior: 'smooth',
+    });
+  };
+
   if (!openFiles || openFiles.length === 0) return null;
 
   return (
-    <div className="flex bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 overflow-x-auto no-scrollbar">
-      {openFiles.map((file: any, index: number) => (
-        <div
-          key={file.path}
-          draggable
-          onDragStart={(e) => onDragStart(e, index)}
-          onDragOver={(e) => { e.preventDefault(); onDragOver(index); }}
-          onDragEnd={onDragEnd}
-          onContextMenu={(e) => handleContextMenu(e, file)}
-          className={`
-            group flex items-center min-w-[120px] max-w-[200px] h-9 px-3 text-xs border-r border-gray-200 dark:border-gray-700 cursor-pointer select-none transition-colors duration-200
-            animate-in fade-in slide-in-from-left-2 duration-200
-            ${currentFile?.path === file.path 
-              ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 border-t-2 border-t-blue-600 dark:border-t-blue-400' 
-              : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}
-            ${draggedIndex === index ? 'opacity-50' : ''}
-          `}
-          onClick={() => selectFile(file)}
-          title={file.path}
+    <div className="relative bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+      {showScroll.left && (
+        <button
+          onClick={() => handleScrollClick('left')}
+          className="absolute left-0 top-0 bottom-0 z-10 px-1 bg-gradient-to-r from-gray-100 via-gray-100 to-transparent dark:from-gray-800 dark:via-gray-800 text-gray-500 hover:text-gray-800 dark:hover:text-white transition-colors"
         >
-          <FileText size={14} className="mr-2 flex-shrink-0 opacity-70" />
-          <span className="truncate flex-1">{file.name}</span>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              closeFile(file.path);
-            }}
-            className={`ml-2 p-0.5 rounded-md opacity-0 group-hover:opacity-100 hover:bg-gray-300 dark:hover:bg-gray-600 ${currentFile?.path === file.path ? 'opacity-100' : ''}`}
+          <ChevronLeft size={16} />
+        </button>
+      )}
+      <div ref={tabsContainerRef} className="flex overflow-x-auto no-scrollbar scroll-smooth">
+        {openFiles.map((file: any, index: number) => (
+          <div
+            key={file.path}
+            draggable
+            onDragStart={(e) => onDragStart(e, index)}
+            onDragOver={(e) => { e.preventDefault(); onDragOver(index); }}
+            onDragEnd={onDragEnd}
+            onContextMenu={(e) => handleContextMenu(e, file)}
+            className={`
+              group flex items-center min-w-[150px] max-w-[220px] h-9 px-3 text-xs border-r border-gray-200 dark:border-gray-700 cursor-pointer select-none transition-all duration-200
+              animate-in fade-in slide-in-from-left-2 duration-200
+              ${currentFile?.path === file.path 
+                ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 border-t-2 border-t-blue-600 dark:border-t-blue-400' 
+                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200/70 dark:hover:bg-gray-700/70'}
+              ${draggedIndex === index ? 'opacity-50' : ''}
+            `}
+            onClick={() => selectFile(file)}
+            title={file.path}
           >
-            <X size={12} />
-          </button>
-        </div>
-      ))}
+            <FileText size={14} className="mr-2 flex-shrink-0 opacity-70" />
+            <span className="truncate flex-1 font-medium">{file.name}</span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                closeFile(file.path);
+              }}
+              className={`ml-2 p-0.5 rounded-md opacity-0 group-hover:opacity-100 hover:bg-gray-300 dark:hover:bg-gray-600 ${currentFile?.path === file.path ? 'opacity-100' : ''}`}
+            >
+              <X size={12} />
+            </button>
+          </div>
+        ))}
+      </div>
+      {showScroll.right && (
+        <button
+          onClick={() => handleScrollClick('right')}
+          className="absolute right-0 top-0 bottom-0 z-10 px-1 bg-gradient-to-l from-gray-100 via-gray-100 to-transparent dark:from-gray-800 dark:via-gray-800 text-gray-500 hover:text-gray-800 dark:hover:text-white transition-colors"
+        >
+          <ChevronRight size={16} />
+        </button>
+      )}
 
       {contextMenu && (
         <div

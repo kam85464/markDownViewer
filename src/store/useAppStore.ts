@@ -41,6 +41,10 @@ interface AppState {
   userId: string;
   githubToken: string;
   settingsGistId: string;
+  backgroundAnimation: string;
+  backgroundAnimationColors: string[];
+  showDailyQuote: boolean;
+  edgeStyle: 'sharp' | 'rounded' | 'curved';
   
   setFolder: (folder: string) => void;
   setFiles: (files: FileItem[]) => void;
@@ -86,6 +90,10 @@ interface AppState {
   setRecentFilesLimit: (limit: number) => void;
   setGithubToken: (token: string) => void;
   setSettingsGistId: (id: string) => void;
+  setBackgroundAnimation: (animation: string) => void;
+  setBackgroundAnimationColors: (colors: string[]) => void;
+  toggleShowDailyQuote: () => void;
+  setEdgeStyle: (style: 'sharp' | 'rounded' | 'curved') => void;
   
 }
 
@@ -133,6 +141,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   userId: settingsService.getUserId(),
   githubToken: settingsService.get('githubToken') || '',
   settingsGistId: settingsService.get('settingsGistId') || '',
+  backgroundAnimation: settingsService.get('backgroundAnimation') || 'particles',
+  backgroundAnimationColors: settingsService.get('backgroundAnimationColors') || ['#60a5fa', '#a78bfa', '#f472b6'],
+  showDailyQuote: settingsService.get('showDailyQuote') ?? true,
+  edgeStyle: settingsService.get('edgeStyle') || 'rounded',
 
   setFolder: (folder) => set({ currentFolder: folder }),
   setFiles: (files) => set({ files }),
@@ -517,5 +529,26 @@ export const useAppStore = create<AppState>((set, get) => ({
   setSettingsGistId: (id) => {
     settingsService.set('settingsGistId', id);
     set({ settingsGistId: id });
+  },
+
+  setBackgroundAnimation: (animation) => {
+    settingsService.set('backgroundAnimation', animation);
+    set({ backgroundAnimation: animation });
+  },
+
+  setBackgroundAnimationColors: (colors) => {
+    settingsService.set('backgroundAnimationColors', colors);
+    set({ backgroundAnimationColors: colors });
+  },
+
+  toggleShowDailyQuote: () => set((state) => {
+    const newValue = !state.showDailyQuote;
+    settingsService.set('showDailyQuote', newValue);
+    return { showDailyQuote: newValue };
+  }),
+
+  setEdgeStyle: (style) => {
+    settingsService.set('edgeStyle', style);
+    set({ edgeStyle: style });
   },
 }));

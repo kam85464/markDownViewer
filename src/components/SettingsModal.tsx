@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { X, Settings, Check, Keyboard, Map, Link2, AlignVerticalJustifyCenter, Palette, Save, RotateCcw, HelpCircle, FileJson, Type, Download, Eye, Package, CheckCircle, Circle, Target, Aperture, Clock, List, User, Shield, HardDrive, Search, Upload, Github, Cloud, Trash2, Info } from 'lucide-react';
+import { X, Settings, Check, Keyboard, Map, Link2, AlignVerticalJustifyCenter, Palette, Save, RotateCcw, HelpCircle, FileJson, Type, Download, Eye, Package, CheckCircle, Circle, Target, Aperture, Clock, List, User, Shield, HardDrive, Search, Upload, Github, Cloud, Trash2, Info, Image, Lightbulb, Square, Circle as CircleIcon, AppWindow } from 'lucide-react';
 
 // Load style presets from src/styles directory
 const stylePresets = import.meta.glob('@/styles/*.css', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
@@ -77,7 +77,15 @@ export const SettingsModal: React.FC = () => {
     githubToken,
     setGithubToken,
     settingsGistId,
-    setSettingsGistId
+    setSettingsGistId,
+    backgroundAnimation,
+    setBackgroundAnimation,
+    backgroundAnimationColors,
+    setBackgroundAnimationColors,
+    showDailyQuote,
+    toggleShowDailyQuote,
+    edgeStyle,
+    setEdgeStyle
   } = useAppStore();
 
   const [previewStyle, setPreviewStyle] = useState<{ name: string, content: string } | null>(null);
@@ -85,6 +93,7 @@ export const SettingsModal: React.FC = () => {
   const [allSettings, setAllSettings] = useState<Record<string, any>>({});
   const [settingsSearchQuery, setSettingsSearchQuery] = useState('');
   const [systemInfo, setSystemInfo] = useState<{ appVersion: string; electronVersion: string; nodeVersion: string; platform: string; arch: string } | null>(null);
+  const [isPreviewing, setIsPreviewing] = useState(false);
 
   useEffect(() => {
     if (showSettings && activeTab === 'advanced' && window.electron) {
@@ -243,6 +252,19 @@ export const SettingsModal: React.FC = () => {
 
   if (!showSettings) return null;
 
+  if (isPreviewing) {
+    return (
+      <div 
+        className="fixed inset-0 z-50 flex items-end justify-center pb-12 cursor-pointer"
+        onClick={() => setIsPreviewing(false)}
+      >
+        <div className="bg-black/75 text-white px-6 py-3 rounded-full text-sm backdrop-blur-md shadow-lg animate-in fade-in slide-in-from-bottom-4 border border-white/10 pointer-events-none select-none">
+          Click anywhere to exit preview
+        </div>
+      </div>
+    );
+  }
+
   const availableThemes = [
     { id: 'light', name: 'GitHub Light' },
     { id: 'vs-dark', name: 'GitHub Dark' },
@@ -375,10 +397,96 @@ export const SettingsModal: React.FC = () => {
                     </button>
                   ))}
                 </div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-100 dark:border-gray-700 mb-2">
+                  <div className="flex items-center">
+                    <div className="p-2 bg-white dark:bg-gray-800 rounded-md mr-3 text-gray-500 dark:text-gray-400">
+                      <Image size={18} />
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900 dark:text-gray-100 text-sm">Background Animation</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">Choose the home screen background</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setIsPreviewing(true)}
+                      className="p-1.5 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
+                      title="Preview Animation"
+                    >
+                      <Eye size={16} />
+                    </button>
+                    <select
+                      value={backgroundAnimation}
+                      onChange={(e) => setBackgroundAnimation(e.target.value)}
+                      className="text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 dark:text-gray-300"
+                    >
+                      <option value="particles">Particles</option>
+                      <option value="aurora">Aurora</option>
+                      <option value="grid">Retro Grid</option>
+                      <option value="random">Random</option>
+                      <option value="none">None</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-100 dark:border-gray-700 mb-2">
+                  <div className="flex items-center">
+                    <div className="p-2 bg-white dark:bg-gray-800 rounded-md mr-3 text-gray-500 dark:text-gray-400">
+                      <AppWindow size={18} />
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900 dark:text-gray-100 text-sm">UI Edge Style</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">Sharp, rounded, or curved corners</div>
+                    </div>
+                  </div>
+                  <select
+                    value={edgeStyle}
+                    onChange={(e) => setEdgeStyle(e.target.value as any)}
+                    className="text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 dark:text-gray-300"
+                  >
+                    <option value="sharp">Sharp</option>
+                    <option value="rounded">Rounded</option>
+                    <option value="curved">Curved</option>
+                  </select>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-100 dark:border-gray-700 mb-2">
+                  <div className="flex items-center">
+                    <div className="p-2 bg-white dark:bg-gray-800 rounded-md mr-3 text-gray-500 dark:text-gray-400">
+                      <Palette size={18} />
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900 dark:text-gray-100 text-sm">Animation Colors</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">Customize background colors</div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 items-center">
+                    {backgroundAnimationColors.map((color, index) => (
+                      <div key={index} className="relative w-6 h-6 rounded-full overflow-hidden border border-gray-300 dark:border-gray-600 shadow-sm">
+                        <input
+                          type="color"
+                          value={color}
+                          onChange={(e) => {
+                            const newColors = [...backgroundAnimationColors];
+                            newColors[index] = e.target.value;
+                            setBackgroundAnimationColors(newColors);
+                          }}
+                          className="absolute -top-2 -left-2 w-10 h-10 p-0 border-0 cursor-pointer"
+                        />
+                      </div>
+                    ))}
+                    <button 
+                      onClick={() => setBackgroundAnimationColors(['#60a5fa', '#a78bfa', '#f472b6'])} 
+                      className="ml-2 p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      title="Reset Colors"
+                    >
+                      <RotateCcw size={14} />
+                    </button>
+                  </div>
+                </div>
               </div>
 
               <div className="mb-6">
                  <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Application</h3>
+                 <ToggleItem label="Daily Tip / Quote" icon={Lightbulb} value={showDailyQuote} onChange={toggleShowDailyQuote} description="Show a tip or quote on the home screen" />
                  <ToggleItem label="Auto-Save" icon={Save} value={autoSaveEnabled} onChange={toggleAutoSave} description="Automatically save changes after 2 seconds of inactivity" />
                  <ToggleItem label="Recent Files" icon={Clock} value={showRecentInSidebar} onChange={toggleShowRecentInSidebar} description="Show recently opened files in the sidebar" />
                  {showRecentInSidebar && (
