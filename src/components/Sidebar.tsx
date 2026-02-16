@@ -101,7 +101,7 @@ const FileTreeSkeleton = () => (
 );
 
 export const Sidebar: React.FC = () => {
-  const { files, currentFile, selectFile, currentFolder, setMarkdownContent, markdownContent, originalContent, setFiles } = useAppStore();
+  const { files, currentFile, selectFile, currentFolder, setMarkdownContent, markdownContent, originalContent, setFiles, showRecentInSidebar, recentFilesLimit } = useAppStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
   const [replaceQuery, setReplaceQuery] = useState('');
@@ -186,7 +186,7 @@ export const Sidebar: React.FC = () => {
   const handleFileClick = async (file: any) => {
     selectFile(file);
     
-    const newRecent = [file, ...recentFiles.filter(f => f.path !== file.path)].slice(0, 10);
+    const newRecent = [file, ...recentFiles.filter(f => f.path !== file.path)].slice(0, recentFilesLimit || 10);
     setRecentFiles(newRecent);
     localStorage.setItem('recentFiles', JSON.stringify(newRecent));
 
@@ -552,7 +552,7 @@ export const Sidebar: React.FC = () => {
         )}
       </div>
       
-      {recentFiles.length > 0 && !searchQuery && (
+      {showRecentInSidebar && recentFiles.length > 0 && !searchQuery && (
         <div className="border-b border-gray-200 dark:border-gray-800">
             <div className="px-4 py-2 flex items-center justify-between">
                 <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Recent Files</h3>
@@ -561,7 +561,7 @@ export const Sidebar: React.FC = () => {
                 </button>
             </div>
             <div className="max-h-32 overflow-y-auto">
-                {recentFiles.map(file => (
+                {recentFiles.slice(0, recentFilesLimit || 10).map(file => (
                     <button key={file.path} onClick={() => handleFileClick(file)} className="w-full text-left flex items-center py-1 px-4 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800">
                         <Clock size={12} className="mr-2 flex-shrink-0" />
                         <span className="truncate">{file.name}</span>

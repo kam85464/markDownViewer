@@ -1,7 +1,9 @@
 export interface FileItem {
   name: string;
   path: string;
-  parent: string;
+  parent?: string;
+  isDirectory?: boolean;
+  isGithub?: boolean;
 }
 
 export interface IElectronAPI {
@@ -15,9 +17,11 @@ export interface IElectronAPI {
   exportToPdf: (htmlContent: string) => Promise<boolean>;
   exportToHtml: (htmlContent: string) => Promise<boolean>;
   getSettings: () => Promise<any>;
+  getSettingsSync: () => any;
   setSetting: (key: string, value: any) => Promise<boolean>;
   resetSettings: () => Promise<boolean>;
   openSettingsInEditor: () => Promise<boolean>;
+  getSystemInfo: () => Promise<{ appVersion: string; electronVersion: string; nodeVersion: string; platform: string; arch: string }>;
 }
 
 declare global {

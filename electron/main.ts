@@ -2,12 +2,20 @@ import { app, BrowserWindow, ipcMain, dialog } from 'electron'
 import path from 'path'
 import fs from 'fs'
 import Store from 'electron-store'
+import crypto from 'crypto'
 
 process.env.DIST = path.join(__dirname, '../dist')
 process.env.VITE_PUBLIC = app.isPackaged ? process.env.DIST : path.join(process.env.DIST, '../public')
 
 let win: BrowserWindow | null
 const store = new Store();
+
+// Initialize User ID if not present
+if (!store.get('userId')) {
+  const userId = 'USER-' + crypto.randomBytes(4).toString('hex').toUpperCase();
+  store.set('userId', userId);
+  store.set('registeredAt', new Date().toISOString());
+}
 
 function createWindow() {
   const bounds = store.get('bounds') as { width: number; height: number; x: number; y: number } | undefined;
@@ -214,17 +222,11 @@ ipcMain.handle('export-html', async (_, htmlContent: string) => {
 
 // Settings Management - IPC Handlers
 ipcMain.handle('get-settings', async () => {
-  return {
-    customCSS: store.get('customCSS') as string || '',
-    autoSaveEnabled: store.get('autoSaveEnabled') as boolean || false,
-    theme: store.get('theme') as string || 'vs-dark',
-    isVimMode: store.get('isVimMode') as boolean || false,
-    showMinimap: store.get('showMinimap') as boolean || false,
-    isSyncScroll: store.get('isSyncScroll') as boolean || true,
-    isTypewriterMode: store.get('isTypewriterMode') as boolean || false,
-    wordWrap: store.get('wordWrap') as boolean || true,
-    fontSize: store.get('fontSize') as number || 14,
-  };
+  return store.store;
+});
+
+ipcMain.on('get-settings-sync', (event) => {
+  event.returnValue = store.store;
 });
 
 ipcMain.handle('set-setting', async (_, key: string, value: any) => {
@@ -240,4 +242,14 @@ ipcMain.handle('reset-settings', async () => {
 ipcMain.handle('open-settings-editor', async () => {
   store.openInEditor();
   return true;
+});
+
+ipcMain.handle('get-system-info', async () => {
+  return {
+    appVersion: app.getVersion(),
+    electronVersion: process.versions.electron,
+    nodeVersion: process.versions.node,
+    platform: process.platform,
+    arch: process.arch
+  };
 });

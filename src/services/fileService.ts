@@ -1,11 +1,5 @@
 // src/services/fileService.ts
-
-export interface FileItem {
-  name: string;
-  path: string;
-  parent: string;
-  isDirectory: boolean;
-}
+import { FileItem } from '../types/global';
 
 export interface IFileService {
   selectFolder(): Promise<string | null>;

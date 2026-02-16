@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Save, X, FileText, FolderOpen, Clock, Trash2, FilePlus, Pin, PinOff, FolderSearch, BookOpen, Lightbulb, FileCode, PenTool, BookOpenText, Scroll, Apple, AppWindow, Cpu, Car, Smartphone, Gamepad2, Watch, Headphones } from 'lucide-react';
+import { Save, X, FileText, FolderOpen, Clock, Trash2, FilePlus, Pin, PinOff, FolderSearch, BookOpen, Lightbulb, FileCode, PenTool, BookOpenText, Scroll, Apple, AppWindow, Cpu, Car, Smartphone, Gamepad2, Watch, Headphones, Github, Loader, ArrowRight, LayoutTemplate } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { Toolbar } from './Toolbar';
 import { Tabs } from './Tabs';
@@ -12,6 +12,7 @@ import { EditorPane } from './EditorPane';
 import { PreviewPane } from './PreviewPane';
 import { SettingsModal } from './SettingsModal';
 import { fileService } from '../services/fileService';
+import { githubService } from '../services/githubService';
 
 
 const TIPS = [
@@ -54,7 +55,32 @@ const TIPS = [
   "Quote: \"Code is like a poem; it has to follow certain rhythms and patterns to be beautiful.\" – Unknown",
 ];
 
-const ParticleBackground: React.FC = () => {
+const TEMPLATES = [
+  {
+    name: 'README',
+    filename: 'README.md',
+    content: '# Project Name\n\nDescription of your project.\n\n## Installation\n\n```bash\nnpm install\n```\n\n## Usage\n\n```javascript\nimport myLib from "my-lib";\n```'
+  },
+  {
+    name: 'Blog Post',
+    filename: 'blog-post.md',
+    content: '---\ntitle: My Blog Post\ndate: 2023-01-01\n---\n\n# My Blog Post\n\nWrite your content here...'
+  },
+  {
+    name: 'To-Do List',
+    filename: 'todo.md',
+    content: '# To-Do List\n\n- [ ] Task 1\n- [ ] Task 2\n- [x] Completed Task'
+  }
+];
+
+const hexToRgba = (hex: string, alpha: number) => {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
+const ParticleBackground: React.FC<{ colors: string[] }> = ({ colors }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mouseRef = useRef({ x: -1000, y: -1000 });
 
@@ -101,8 +127,9 @@ const ParticleBackground: React.FC = () => {
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const isDark = document.documentElement.classList.contains('dark');
-      ctx.fillStyle = isDark ? 'rgba(100, 149, 237, 0.2)' : 'rgba(100, 149, 237, 0.4)';
-      ctx.strokeStyle = isDark ? 'rgba(100, 149, 237, 0.05)' : 'rgba(100, 149, 237, 0.1)';
+      const primaryColor = colors[0] || '#60a5fa';
+      ctx.fillStyle = isDark ? hexToRgba(primaryColor, 0.2) : hexToRgba(primaryColor, 0.4);
+      ctx.strokeStyle = isDark ? hexToRgba(primaryColor, 0.05) : hexToRgba(primaryColor, 0.1);
       
       particles.forEach(p => {
         ctx.beginPath();
@@ -121,7 +148,7 @@ const ParticleBackground: React.FC = () => {
         const distance = Math.sqrt(dx * dx + dy * dy);
         if (distance < 150) {
           ctx.beginPath();
-          ctx.strokeStyle = isDark ? 'rgba(100, 149, 237, 0.15)' : 'rgba(100, 149, 237, 0.25)';
+          ctx.strokeStyle = isDark ? hexToRgba(primaryColor, 0.15) : hexToRgba(primaryColor, 0.25);
           ctx.moveTo(p.x, p.y);
           ctx.lineTo(mouseRef.current.x, mouseRef.current.y);
           ctx.stroke();
@@ -159,9 +186,35 @@ const ParticleBackground: React.FC = () => {
       window.removeEventListener('mousemove', handleMouseMove);
       cancelAnimationFrame(animationFrameId);
     };
-  }, []);
+  }, [colors]);
 
   return <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none z-0" />;
+};
+
+const AuroraBackground: React.FC<{ colors: string[] }> = ({ colors }) => {
+  const c1 = colors[0] || '#60a5fa';
+  const c2 = colors[1] || '#a78bfa';
+  const c3 = colors[2] || '#f472b6';
+  
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+      <div className="absolute top-[-50%] left-[-50%] w-[200%] h-[200%] animate-[spin_20s_linear_infinite] blur-3xl opacity-50 dark:opacity-30" style={{ background: `linear-gradient(to bottom right, ${hexToRgba(c1, 0.2)}, ${hexToRgba(c2, 0.2)}, ${hexToRgba(c3, 0.2)})` }} />
+      <div className="absolute top-[-50%] left-[-50%] w-[200%] h-[200%] animate-[spin_15s_linear_infinite_reverse] blur-3xl opacity-50 dark:opacity-30" style={{ background: `linear-gradient(to top left, ${hexToRgba(c3, 0.2)}, ${hexToRgba(c1, 0.2)}, ${hexToRgba(c2, 0.2)})` }} />
+    </div>
+  );
+};
+
+const GridBackground: React.FC<{ colors: string[] }> = ({ colors }) => {
+  const c1 = colors[0] || '#60a5fa';
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none z-0" 
+         style={{ 
+           backgroundImage: `linear-gradient(${hexToRgba(c1, 0.1)} 1px, transparent 1px), linear-gradient(90deg, ${hexToRgba(c1, 0.1)} 1px, transparent 1px)`, 
+           backgroundSize: '40px 40px',
+           maskImage: 'radial-gradient(circle at center, black, transparent 80%)'
+         }} 
+    />
+  );
 };
 
 export const Layout: React.FC = () => { 
@@ -183,7 +236,12 @@ export const Layout: React.FC = () => {
     selectFile,
     setMarkdownContent,
     isFocusMode,
-    isTyping
+    isTyping,
+    files,
+    currentFolder,
+    backgroundAnimation,
+    backgroundAnimationColors,
+    showDailyQuote
   } = useAppStore();
 
   const [showDisclaimer, setShowDisclaimer] = useState(() => {
@@ -200,6 +258,19 @@ export const Layout: React.FC = () => {
   const menuRef = useRef<HTMLDivElement>(null);
   const [dailyTip, setDailyTip] = useState("");
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+  const [githubUrl, setGithubUrl] = useState("");
+  const [isLoadingGithub, setIsLoadingGithub] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [randomAnimation, setRandomAnimation] = useState<string>('particles');
+
+  useEffect(() => {
+    if (backgroundAnimation === 'random') {
+      const animations = ['particles', 'aurora', 'grid'];
+      setRandomAnimation(animations[Math.floor(Math.random() * animations.length)]);
+    }
+  }, [backgroundAnimation]);
+
+  const activeAnimation = backgroundAnimation === 'random' ? randomAnimation : backgroundAnimation;
 
   useEffect(() => {
     setDailyTip(TIPS[Math.floor(Math.random() * TIPS.length)]);
@@ -278,6 +349,12 @@ export const Layout: React.FC = () => {
     selectFile({ name: 'Untitled', path: '', parent: '' });
   };
 
+  const handleTemplateSelect = (template: typeof TEMPLATES[0]) => {
+    setMarkdownContent(template.content);
+    selectFile({ name: template.filename, path: `untitled:${template.filename}`, parent: '' });
+    setShowTemplates(false);
+  };
+
   const handleQuickStart = async () => {
     const content = `# Quick Start Guide
 
@@ -307,6 +384,31 @@ Enjoy writing!
 `;
     await selectFile({ name: 'Quick Start.md', path: 'untitled:Quick Start.md', parent: '' });
     setMarkdownContent(content);
+  };
+
+  const handleLoadFromGithubHome = async () => {
+    if (!githubUrl) return;
+    setIsLoadingGithub(true);
+    setFiles(null as any);
+    try {
+      const result = await githubService.loadFromUrl(githubUrl);
+      if (result.type === 'file' && result.content) {
+        setMarkdownContent(result.content);
+        selectFile({
+            name: githubUrl.split('/').pop() || 'github-file.md',
+            path: githubUrl,
+            isGithub: true
+        });
+      } else if (result.type === 'dir' && result.files) {
+        setFiles(result.files as any);
+        setFolder(githubUrl);
+      }
+    } catch (error) {
+      console.error("GitHub load error:", error);
+      alert("Failed to load from GitHub. Check console for details.");
+    } finally {
+      setIsLoadingGithub(false);
+    }
   };
 
   const handleContextMenu = (e: React.MouseEvent, path: string) => {
@@ -374,6 +476,20 @@ Enjoy writing!
 
   const dimClass = isFocusMode && isTyping ? 'opacity-10 transition-opacity duration-500 delay-100' : 'opacity-100 transition-opacity duration-200';
 
+  const showEditor = isEditing && !!currentFile;
+  const showSidebar = !isDistractionFreeMode && isSidebarVisible && (!!currentFolder || (!!files && files.length > 0));
+  const showTOCPanel = showTOC && !isDistractionFreeMode && !!currentFile;
+
+  const renderBackground = () => {
+    switch (activeAnimation) {
+      case 'aurora': return <AuroraBackground colors={backgroundAnimationColors} />;
+      case 'grid': return <GridBackground colors={backgroundAnimationColors} />;
+      case 'none': return null;
+      case 'particles':
+      default: return <ParticleBackground colors={backgroundAnimationColors} />;
+    }
+  };
+
   return (
     <div className="flex flex-col h-screen bg-[#fcfcfc] dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       {/* {isPresentationMode && <Presentation />} */}
@@ -383,19 +499,19 @@ Enjoy writing!
       </div>
       <div className="flex flex-1 overflow-hidden">
 
-        {!isDistractionFreeMode && isSidebarVisible && <div className={`${dimClass} animate-in slide-in-from-left duration-300`}><Sidebar /></div>}
+        {showSidebar && <div className={`${dimClass} animate-in slide-in-from-left duration-300`}><Sidebar /></div>}
         <main id="app-main-content" className="flex-1 flex flex-col overflow-hidden relative"> 
           {!isDistractionFreeMode && <div className={`${dimClass} animate-in slide-in-from-top duration-300`}><Tabs /></div>}
           <div className="flex flex-1 overflow-hidden relative">
           <div className={`flex-1 flex overflow-hidden relative ${splitDirection === 'horizontal' ? 'flex-col' : 'flex-row'}`}>
-            {isEditing && (
+            {showEditor && (
             <div className={`${splitDirection === 'horizontal' ? 'h-1/2 w-full border-b' : 'w-1/2 h-full border-r'} border-gray-200 dark:border-gray-700`}>
               <ErrorBoundary name="Editor">
                 <EditorPane />
               </ErrorBoundary>
             </div>
           )}
-            <div className={`${isEditing ? (splitDirection === 'horizontal' ? 'h-1/2 w-full' : 'w-1/2 h-full') : 'w-full h-full'} relative ${dimClass}`}>
+            <div className={`${showEditor ? (splitDirection === 'horizontal' ? 'h-1/2 w-full' : 'w-1/2 h-full') : 'w-full h-full'} relative ${dimClass}`}>
               <ErrorBoundary name="Preview">
                 <PreviewPane />
               </ErrorBoundary>
@@ -404,7 +520,7 @@ Enjoy writing!
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
               >
-                  <ParticleBackground />
+                  {renderBackground()}
                   
                   <div className="z-20 flex flex-col items-center max-w-2xl w-full px-6 animate-in fade-in zoom-in-95 duration-500">
                       <div className="relative group cursor-default mb-10" style={{ perspective: '1000px' }}>
@@ -482,8 +598,41 @@ Enjoy writing!
                             <BookOpen size={22} className="group-hover:text-blue-500 transition-colors" />
                             <span>Quick Start</span>
                           </div>
+                         </button>
+                         <button 
+                           onClick={() => setShowTemplates(true)}
+                           className="group px-8 py-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 rounded-2xl font-semibold text-lg shadow-lg shadow-gray-200/50 dark:shadow-none hover:shadow-xl hover:border-blue-500/50 dark:hover:border-blue-500/50 transition-all duration-300 hover:-translate-y-1"
+                         >
+                           <div className="flex items-center gap-3">
+                             <LayoutTemplate size={22} className="group-hover:text-blue-500 transition-colors" />
+                             <span>From Template</span>
+                           </div>
                         </button>
                       </div>
+
+                      <div className="w-full max-w-lg mb-12 relative group animate-in fade-in slide-in-from-bottom-4 duration-700 delay-75">
+                          <div className="absolute -inset-1 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 rounded-xl blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
+                          <div className="relative flex items-center bg-white dark:bg-gray-800 rounded-xl p-2 shadow-lg border border-gray-100 dark:border-gray-700">
+                            <div className="p-2 text-gray-400">
+                              <Github size={20} />
+                            </div>
+                            <input 
+                              type="text" 
+                              placeholder="Paste GitHub repository or file URL..." 
+                              className="flex-1 bg-transparent border-none focus:outline-none text-sm text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 px-2"
+                              value={githubUrl}
+                              onChange={(e) => setGithubUrl(e.target.value)}
+                              onKeyDown={(e) => e.key === 'Enter' && handleLoadFromGithubHome()}
+                            />
+                            <button 
+                              onClick={handleLoadFromGithubHome}
+                              disabled={!githubUrl || isLoadingGithub}
+                              className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                              {isLoadingGithub ? <Loader size={18} className="animate-spin" /> : <ArrowRight size={18} />}
+                            </button>
+                          </div>
+                       </div>
 
                       {recentFolders.length > 0 && (
                         <div className="w-full max-w-md animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
@@ -521,10 +670,12 @@ Enjoy writing!
                         </div>
                       )}
 
-                      <div className="mt-12 flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400 bg-white/40 dark:bg-gray-800/40 px-4 py-2 rounded-full backdrop-blur-sm border border-white/20 dark:border-gray-700/30 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-300">
-                        <Lightbulb size={16} className="text-yellow-500" />
-                        <span className="italic">{dailyTip}</span>
-                      </div>
+                      {showDailyQuote && (
+                        <div className="mt-12 flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400 bg-white/40 dark:bg-gray-800/40 px-4 py-2 rounded-full backdrop-blur-sm border border-white/20 dark:border-gray-700/30 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-300">
+                          <Lightbulb size={16} className="text-yellow-500" />
+                          <span className="italic">{dailyTip}</span>
+                        </div>
+                      )}
                   </div>
 
                   {contextMenu && (
@@ -570,7 +721,7 @@ Enjoy writing!
               </div>
             </div>
           </div>
-          {showTOC && !isDistractionFreeMode && <div className={`${dimClass} h-full animate-in slide-in-from-right duration-300`}><TableOfContents /></div>}
+          {showTOCPanel && <div className={`${dimClass} h-full animate-in slide-in-from-right duration-300`}><TableOfContents /></div>}
           </div>
         </main>
       </div>

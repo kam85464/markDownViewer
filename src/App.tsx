@@ -1,20 +1,21 @@
 import React, { useEffect } from 'react';
 import { Layout } from './components/Layout';
 import { useAppStore } from './store/useAppStore';
-import { settingsService } from './services/settingsService';
 
 const App: React.FC = () => {
-  const { isDarkMode } = useAppStore();
+  const { isDarkMode, edgeStyle } = useAppStore();
 
   useEffect(() => {
-    // Initialize settings cache on app start
-    settingsService._init?.();
-  }, []);
+    const root = document.documentElement;
+    if (isDarkMode) {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+    root.classList.remove('sharp', 'rounded', 'curved');
+    root.classList.add(edgeStyle);
 
-  useEffect(() => {
-    if (isDarkMode) document.documentElement.classList.add('dark');
-    else document.documentElement.classList.remove('dark');
-  }, [isDarkMode]);
+  }, [isDarkMode, edgeStyle]);
 
   return <Layout />;
 };

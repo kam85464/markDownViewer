@@ -68,7 +68,12 @@ const TourOverlay: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     { title: "Sidebar", content: "The sidebar on the left shows your files. If you open a Git repository, it also shows Git status and Pull Requests.", targetId: "app-sidebar" },
     { title: "Toolbar", content: "Use the toolbar to Open folders, Save files, Export, and toggle settings like Dark Mode or Vim Mode.", targetId: "app-toolbar" },
     { title: "Editor & Preview", content: "The main area is split between the Editor and the Preview. You can adjust the split or toggle visibility.", targetId: "app-main-content" },
-    { title: "GitHub", content: "You can load files directly from GitHub using the GitHub icon in the toolbar.", targetId: "toolbar-github-btn" }
+    { title: "GitHub", content: "You can load files directly from GitHub using the GitHub icon in the toolbar.", targetId: "toolbar-github-btn" },
+    { title: "Table of Contents", content: "Toggle the Table of Contents to quickly navigate through your document.", targetId: null },
+    { title: "Exporting", content: "Export your markdown to PDF or HTML using the export buttons in the toolbar.", targetId: null },
+    { title: "Help & Features", content: "Access the full features list and user manual from the Help menu in the toolbar.", targetId: null },
+    { title: "Enjoy!", content: "That's a quick tour of Markdown Viewer Pro. Enjoy writing your markdown!", targetId: null },
+    { title: "End of Tour", content: "This concludes the tour. You can revisit it anytime from the Help menu. Happy writing!", targetId: null },
   ];
   const [step, setStep] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
@@ -310,8 +315,8 @@ export const Toolbar: React.FC = () => {
         )}
         <ToolbarButton icon={<FileDown size={18} />} label="PDF" onClick={handleExportPdf} disabled={!markdownContent} showLabel={isEditing} title="Export to PDF" />
         <ToolbarButton icon={<FileCode size={18} />} label="HTML" onClick={handleExportHtml} disabled={!markdownContent} showLabel={isEditing} title="Export to HTML" />
-        <ToolbarButton icon={<FilePlus size={18} />} label="Save As" onClick={saveAs} disabled={!markdownContent} showLabel={isEditing} title="Save As" />
-        <ToolbarButton icon={<Save size={18} />} label="Save" onClick={saveCurrentFile} disabled={!currentFile} showLabel={isEditing} title="Save" />
+        <ToolbarButton icon={<FilePlus size={18} />} label="Save As" onClick={saveAs} disabled={!markdownContent || !isEditing} showLabel={isEditing} title="Save As" />
+        <ToolbarButton icon={<Save size={18} />} label="Save" onClick={saveCurrentFile} disabled={!currentFile || !isEditing} showLabel={isEditing} title="Save" />
       </div>
 
       <div className="flex items-center space-x-1 no-drag">

@@ -11,7 +11,9 @@ contextBridge.exposeInMainWorld('electron', {
   exportToPdf: (htmlContent: string) => ipcRenderer.invoke('export-pdf', htmlContent),
   exportToHtml: (htmlContent: string) => ipcRenderer.invoke('export-html', htmlContent),
   getSettings: () => ipcRenderer.invoke('get-settings'),
+  getSettingsSync: () => ipcRenderer.sendSync('get-settings-sync'),
   setSetting: (key: string, value: any) => ipcRenderer.invoke('set-setting', key, value),
   resetSettings: () => ipcRenderer.invoke('reset-settings'),
   openSettingsInEditor: () => ipcRenderer.invoke('open-settings-editor'),
+  getSystemInfo: () => ipcRenderer.invoke('get-system-info'),
 })
