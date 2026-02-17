@@ -4,6 +4,14 @@
   "main": "dist-electron/main.js",
   "description": "A powerful Markdown viewer built with Electron and React.",
   "author": "Kamalsoft",
+  "keywords": [
+    "markdown",
+    "viewer",
+    "editor",
+    "electron",
+    "react",
+    "vite"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "node generate-sitemap.js && tsc && vite build && electron-builder",
@@ -52,6 +60,7 @@
     "tailwindcss": "^3.4.14",
     "typescript": "^5.6.3",
     "vite": "^6.0.0",
+    "vite-plugin-html": "^3.2.2",
     "vite-plugin-electron": "^0.28.2",
     "vite-plugin-electron-renderer": "^0.14.5",
     "wait-on": "^8.0.0"
