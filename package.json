@@ -14,7 +14,7 @@
   ],
   "scripts": {
     "dev": "vite",
-    "build": "node generate-sitemap.js && tsc && vite build && electron-builder",
+    "build": "node generate-sitemap.js && node secure-offline.js && tsc && vite build && electron-builder",
     "preview": "vite preview"
   },
   "dependencies": {

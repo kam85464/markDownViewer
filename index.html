@@ -3,7 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <title><%= title %></title>
-    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'nonce-<%= nonce %>'; style-src 'self' 'nonce-<%= nonce %>' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com; worker-src 'self' blob:; connect-src 'self' https:;" />
+    <script nonce="<%= nonce %>">
+      window.MonacoEnvironment = { nonce: '<%= nonce %>' };
+    </script>
     <!-- Open Graph / Facebook -->
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://mark-down-viewer.vercel.app/" />

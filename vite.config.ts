@@ -8,6 +8,9 @@ import { visualizer } from 'rollup-plugin-visualizer'
 import viteCompression from 'vite-plugin-compression'
 import monacoEditorPlugin from 'vite-plugin-monaco-editor'
 import path from 'path'
+import crypto from 'crypto'
+
+const nonce = crypto.randomBytes(16).toString('base64')
 
 export default defineConfig({
   plugins: [
@@ -16,6 +19,7 @@ export default defineConfig({
       inject: {
         data: {
           title: 'Markdown Viewer Pro',
+          nonce,
         },
         tags: [
           {
@@ -57,6 +61,11 @@ export default defineConfig({
             injectTo: 'head',
             tag: 'meta',
             attrs: { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
+          },
+          {
+            injectTo: 'head',
+            tag: 'meta',
+            attrs: { name: 'mobile-web-app-capable', content: 'yes' },
           },
           // Add Twitter tags similarly if needed
         ],
