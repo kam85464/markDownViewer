@@ -2,6 +2,9 @@ import React, { useEffect } from 'react';
 import { Layout } from './components/Layout';
 import { useAppStore } from './store/useAppStore';
 import OfflineBanner from './OfflineBanner';
+import { setupMonaco } from './utils/monacoSetup';
+
+setupMonaco();
 
 const App: React.FC = () => {
   const { isDarkMode, edgeStyle } = useAppStore();
