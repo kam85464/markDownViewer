@@ -733,7 +733,7 @@ export const getCustomTemplates = (): Template[] => {
 export const saveCustomTemplate = (template: Omit<Template, 'icon' | 'isCustom'>): Template[] => {
   const current = getCustomTemplates();
   // We don't store the icon component in localStorage
-  const newTemplate = { ...template, isCustom: true };
+  const newTemplate = { ...template, isCustom: true, icon: FileText };
   const updated = [...current, newTemplate];
   localStorage.setItem(CUSTOM_TEMPLATES_KEY, JSON.stringify(updated));
   return updated;
