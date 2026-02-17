@@ -218,7 +218,12 @@ const GridBackground: React.FC<{ colors: string[] }> = ({ colors }) => {
   );
 };
 
-export const Layout: React.FC = () => { 
+interface LayoutProps {
+  onOpenTemplateModal: () => void;
+  onSaveTemplate: () => void;
+}
+
+export const Layout: React.FC<LayoutProps> = ({ onOpenTemplateModal, onSaveTemplate }) => { 
   const {
     isEditing,
     showTOC,
@@ -261,7 +266,6 @@ export const Layout: React.FC = () => {
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const [githubUrl, setGithubUrl] = useState("");
   const [isLoadingGithub, setIsLoadingGithub] = useState(false);
-  const [showTemplates, setShowTemplates] = useState(false);
   const [randomAnimation, setRandomAnimation] = useState<string>('particles');
 
   useEffect(() => {
@@ -348,12 +352,6 @@ export const Layout: React.FC = () => {
   const handleNewFile = () => {
     setMarkdownContent('');
     selectFile({ name: 'Untitled', path: '', parent: '' });
-  };
-
-  const handleTemplateSelect = (template: typeof TEMPLATES[0]) => {
-    setMarkdownContent(template.content);
-    selectFile({ name: template.filename, path: `untitled:${template.filename}`, parent: '' });
-    setShowTemplates(false);
   };
 
   const handleQuickStart = async () => {
@@ -611,7 +609,7 @@ Enjoy writing!
                           </div>
                          </button>
                          <button 
-                           onClick={() => setShowTemplates(true)}
+                           onClick={onOpenTemplateModal}
                            className="group px-8 py-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 rounded-2xl font-semibold text-lg shadow-lg shadow-gray-200/50 dark:shadow-none hover:shadow-xl hover:border-blue-500/50 dark:hover:border-blue-500/50 transition-all duration-300 hover:-translate-y-1"
                          >
                            <div className="flex items-center gap-3">

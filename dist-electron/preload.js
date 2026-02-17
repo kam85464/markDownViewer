@@ -1,1 +1,19 @@
-"use strict";const e=require("electron");e.contextBridge.exposeInMainWorld("electron",{selectFolder:()=>e.ipcRenderer.invoke("select-folder"),scanFolder:n=>e.ipcRenderer.invoke("scan-folder",n),readFile:n=>e.ipcRenderer.invoke("read-file",n),saveFile:(n,i)=>e.ipcRenderer.invoke("save-file",{filePath:n,content:i}),saveFileAs:n=>e.ipcRenderer.invoke("save-file-as",n),getRecentFolders:()=>e.ipcRenderer.invoke("get-recent-folders"),showConfirmDialog:n=>e.ipcRenderer.invoke("show-confirm-dialog",n),exportToPdf:n=>e.ipcRenderer.invoke("export-pdf",n),exportToHtml:n=>e.ipcRenderer.invoke("export-html",n),getSettings:()=>e.ipcRenderer.invoke("get-settings"),getSettingsSync:()=>e.ipcRenderer.sendSync("get-settings-sync"),setSetting:(n,i)=>e.ipcRenderer.invoke("set-setting",n,i),resetSettings:()=>e.ipcRenderer.invoke("reset-settings"),openSettingsInEditor:()=>e.ipcRenderer.invoke("open-settings-editor"),getSystemInfo:()=>e.ipcRenderer.invoke("get-system-info")});
+"use strict";
+const electron = require("electron");
+electron.contextBridge.exposeInMainWorld("electron", {
+  selectFolder: () => electron.ipcRenderer.invoke("select-folder"),
+  scanFolder: (path) => electron.ipcRenderer.invoke("scan-folder", path),
+  readFile: (path) => electron.ipcRenderer.invoke("read-file", path),
+  saveFile: (path, content) => electron.ipcRenderer.invoke("save-file", { filePath: path, content }),
+  saveFileAs: (content) => electron.ipcRenderer.invoke("save-file-as", content),
+  getRecentFolders: () => electron.ipcRenderer.invoke("get-recent-folders"),
+  showConfirmDialog: (options) => electron.ipcRenderer.invoke("show-confirm-dialog", options),
+  exportToPdf: (htmlContent) => electron.ipcRenderer.invoke("export-pdf", htmlContent),
+  exportToHtml: (htmlContent) => electron.ipcRenderer.invoke("export-html", htmlContent),
+  getSettings: () => electron.ipcRenderer.invoke("get-settings"),
+  getSettingsSync: () => electron.ipcRenderer.sendSync("get-settings-sync"),
+  setSetting: (key, value) => electron.ipcRenderer.invoke("set-setting", key, value),
+  resetSettings: () => electron.ipcRenderer.invoke("reset-settings"),
+  openSettingsInEditor: () => electron.ipcRenderer.invoke("open-settings-editor"),
+  getSystemInfo: () => electron.ipcRenderer.invoke("get-system-info")
+});
