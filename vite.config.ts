@@ -4,6 +4,9 @@ import electron from 'vite-plugin-electron'
 import renderer from 'vite-plugin-electron-renderer'
 import { createHtmlPlugin } from 'vite-plugin-html'
 import { VitePWA } from 'vite-plugin-pwa'
+import { visualizer } from 'rollup-plugin-visualizer'
+import viteCompression from 'vite-plugin-compression'
+import monacoEditorPlugin from 'vite-plugin-monaco-editor'
 import path from 'path'
 
 export default defineConfig({
@@ -94,6 +97,7 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
         navigateFallback: '/index.html',
+        maximumFileSizeToCacheInBytes: 12 * 1024 * 1024,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -126,6 +130,34 @@ export default defineConfig({
       },
     ]),
     renderer(),
+    visualizer({
+      open: true,
+      gzipSize: true,
+      brotliSize: true,
+    }),
+    viteCompression({
+      algorithm: 'gzip',
+      ext: '.gz',
+    }),
+    viteCompression({
+      algorithm: 'brotliCompress',
+      ext: '.br',
+    }),
+    monacoEditorPlugin({
+      language: ['markdown', 'javascript', 'typescript', 'html', 'css', 'json', 'yaml', 'xml', 'bash', 'shell', 'python', 'java', 'sql'],
+      features: [
+        '!contextmenu',
+        '!snippets',
+        '!suggest',
+        '!parameterHints',
+        '!codeAction',
+        '!codelens',
+        '!rename',
+        '!colorPicker',
+        '!accessibilityHelp',
+        '!iPadShowKeyboard',
+      ],
+    }),
   ],
   resolve: {
     alias: {
@@ -141,11 +173,25 @@ export default defineConfig({
     chunkSizeWarningLimit: 4000,
     rollupOptions: {
       output: {
-        manualChunks: {
-          'mermaid': ['mermaid'],
-          'monaco': ['monaco-editor', 'monaco-vim'],
-          'markdown': ['marked', 'markdown-it'],
-          'math': ['katex'],
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('mermaid') || id.includes('monaco-editor') || id.includes('monaco-vim')) {
+              return 'editor'
+            }
+            if (id.includes('react') || id.includes('react-dom') || id.includes('scheduler') || id.includes('zustand')) {
+              return 'framework'
+            }
+            if (id.includes('marked') || id.includes('markdown-it') || id.includes('highlight.js')) {
+              return 'markdown'
+            }
+            if (id.includes('katex')) {
+              return 'math'
+            }
+            if (id.includes('d3') || id.includes('dagre') || id.includes('lodash') || id.includes('khroma')) {
+              return 'utils'
+            }
+            return 'vendor'
+          }
         },
       },
     },
