@@ -10,9 +10,14 @@ import monacoEditorPlugin from 'vite-plugin-monaco-editor'
 import path from 'path'
 import crypto from 'crypto'
 
-const nonce = crypto.randomBytes(16).toString('base64')
+export default defineConfig(({ mode }) => {
+  const nonce = crypto.randomBytes(16).toString('base64')
+  const isDev = mode === 'development'
+  const csp = isDev
+    ? `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com; worker-src 'self' blob:; connect-src 'self' https:;`
+    : `default-src 'self'; script-src 'self' 'nonce-${nonce}'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com; worker-src 'self' blob:; connect-src 'self' https:;`
 
-export default defineConfig({
+  return {
   plugins: [
     createHtmlPlugin({
       minify: true,
@@ -20,6 +25,7 @@ export default defineConfig({
         data: {
           title: 'Markdown Viewer Pro',
           nonce,
+          csp,
         },
         tags: [
           {
@@ -180,6 +186,9 @@ export default defineConfig({
   
   build: {
     chunkSizeWarningLimit: 4000,
+    modulePreload: {
+      polyfill: false,
+    },
     rollupOptions: {
       output: {
         manualChunks(id) {
@@ -190,7 +199,7 @@ export default defineConfig({
             if (id.includes('react') || id.includes('react-dom') || id.includes('scheduler') || id.includes('zustand')) {
               return 'framework'
             }
-            if (id.includes('marked') || id.includes('markdown-it') || id.includes('highlight.js')) {
+            if (id.includes('marked') || id.includes('markdown-it') || id.includes('highlight.js') || id.includes('micromark') || id.includes('decode-named-character-reference')) {
               return 'markdown'
             }
             if (id.includes('katex')) {
@@ -205,4 +214,5 @@ export default defineConfig({
       },
     },
   },
+}
 })
